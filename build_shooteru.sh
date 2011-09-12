@@ -11,7 +11,7 @@ time_start=$(date +%s.%N)
 MAKE="9"
 
 ## Build kernel using shooter_defconfig
-export CROSS_COMPILE=$HOME/ionut/liquid-4.4/prebuilts/gcc/linux-x86/arm/LK/bin/arm-cortex_a8-linux-gnueabi-
+export CROSS_COMPILE=$HOME/ionut/liquid-4.4/prebuilts/gcc/linux-x86/arm/sm-arm-eabi-4.7/bin/arm-eabi-
 export ARCH=arm
 make shooter_u_defconfig
 make -j$MAKE
