@@ -79,3 +79,6 @@ GTAGS
 *.orig
 *~
 \#*#
+\Packages
+build_shooteru.sh
+\prebuilt-scripts
