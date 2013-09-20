@@ -42,11 +42,11 @@
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 /* prim = 960 x 540 x 4(bpp) x 3(pages) */
 #define MSM_FB_PRIM_BUF_SIZE \
-				(roundup((960 * ALIGN(540, 32) * 4), 4096) * 3)
+    (roundup((960 * 540 * 4), 4096) * 3) /* 4 bpp x 3 pages */
 #else
 /* prim = 960 x 540 x 4(bpp) x 2(pages) */
 #define MSM_FB_PRIM_BUF_SIZE \
-				(roundup((960 * ALIGN(540, 32) * 4), 4096) * 2)
+    (roundup((960 * 540 * 4), 4096) * 2) /* 4 bpp x 2 pages */
 #endif
 
 #ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
@@ -97,7 +97,7 @@
 /* SMI PMEM Region, as the video core will use offset address */
 /* from the Firmware base */
 #define KERNEL_SMI_BASE		(MSM_SMI_BASE)
-#define KERNEL_SMI_SIZE		0x400000
+#define KERNEL_SMI_SIZE		0x700000
 
 /* User space SMI PMEM Region for video core*/
 /* used for encoder, decoder input & output buffers  */
