@@ -9,7 +9,7 @@ DHDCFLAGS = -DLINUX -DBCMDRIVER -DBCMDONGLEHOST -DUNRELEASEDCHIP -DBCMDMA32  \
 	-DMMC_SDIO_ABORT -DEMBEDDED_PLATFORM -DCUSTOMER_HW2 -DBCMSDIO        \
 	-DBCMLXSDMMC -DBCMPLATFORM_BUS -DWIFI_ACT_FRAME -DPKT_FILTER_SUPPORT \
 	-DWL_CFG80211 -DWL_COMPAT_WIRELESS -DENABLE_INSMOD_NO_FW_LOAD        \
-	-Wall -Wstrict-prototypes -Werror                                    \
+	-Wall -Wstrict-prototypes -Werror -DWL_CFG80211_STA_EVENT            \
 	-Idrivers/net/wireless/bcmdhd -Idrivers/net/wireless/bcmdhd/include
 
 CFLAGS_wl_cfgp2p.o = -Wno-sizeof-pointer-memaccess
@@ -28,6 +28,8 @@ endif
 ifneq ($(CONFIG_CFG80211),)
 bcmdhd-objs += wl_cfg80211.o wl_cfgp2p.o wl_linux_mon.o
 DHDCFLAGS += -DWL_CFG80211
+DHDCFLAGS += -DCUSTOM_ROAM_TRIGGER_SETTING=-65
+DHDCFLAGS += -DCUSTOM_ROAM_DELTA_SETTING=15
 endif
 ifneq ($(CONFIG_DHD_USE_SCHED_SCAN),)
 DHDCFLAGS += -DWL_SCHED_SCAN
