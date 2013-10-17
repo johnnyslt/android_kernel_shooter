@@ -21,7 +21,7 @@
  * software in any way with any other Broadcom software provided under a license
  * other than the GPL, without Broadcom's express prior written consent.
  *
- * $Id: dhd_sdio.c 338148 2012-06-11 20:35:45Z $
+ * $Id: dhd_sdio.c 326662 2012-04-10 06:38:08Z $
  */
 
 #include <typedefs.h>
@@ -620,7 +620,6 @@ dhdsdio_htclk(dhd_bus_t *bus, bool on, bool pendok)
 		if (!SBSDIO_CLKAV(clkctl, bus->alp_only)) {
 			DHD_ERROR(("%s: HT Avail timeout (%d): clkctl 0x%02x\n",
 			           __FUNCTION__, PMU_MAX_TRANSITION_DLY, clkctl));
-			dhd_os_send_hang_message(bus->dhd);
 			return BCME_ERROR;
 		}
 
@@ -1376,13 +1375,7 @@ dhd_bus_txctl(struct dhd_bus *bus, uchar *msg, uint msglen)
 		/* Send from dpc */
 		bus->ctrl_frame_buf = frame;
 		bus->ctrl_frame_len = len;
-		if (!bus->dpc_sched) {
-			bus->dpc_sched = TRUE;
-			dhd_sched_dpc(bus->dhd);
-		}
-		if (bus->ctrl_frame_stat) {
-			dhd_wait_for_event(bus->dhd, &bus->ctrl_frame_stat);
-		}
+		dhd_wait_for_event(bus->dhd, &bus->ctrl_frame_stat);
 		if (bus->ctrl_frame_stat == FALSE) {
 			DHD_INFO(("%s: ctrl_frame_stat == FALSE\n", __FUNCTION__));
 			ret = 0;
