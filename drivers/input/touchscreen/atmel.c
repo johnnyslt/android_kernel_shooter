@@ -1692,14 +1692,14 @@ static irqreturn_t atmel_irq_thread(int irq, void *ptr)
 			    	(scr_on_touch == false) &&
 			    	(exec_count == true)) {
 					pm8058_drvx_led_brightness_set(sweep2wake_leddev, 0);
-					printk(KERN_INFO "[sweep2wake]: deactivated button backlight.\n");
+//					printk(KERN_INFO "[sweep2wake]: deactivated button backlight.\n");
 				}
 				exec_count = true;
 				led_exec_count = true;
 				barrier[0] = false;
 				barrier[1] = false;
 				scr_on_touch = false;
-				printk(KERN_INFO "[sweep2wake]: Finger released, reseting vars.\n");
+//				printk(KERN_INFO "[sweep2wake]: Finger released, reseting vars.\n");
 			}
 #endif
 
