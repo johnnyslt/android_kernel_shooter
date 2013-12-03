@@ -1,4 +1,4 @@
-/* Copyright (c) 2002,2007-2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2002,2007-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -27,6 +27,7 @@
 
 struct kgsl_device;
 struct kgsl_device_private;
+struct adreno_ft_data;
 
 #define GSL_RB_MEMPTRS_SCRATCH_COUNT	 8
 struct kgsl_rbmemptrs {
@@ -54,7 +55,8 @@ struct adreno_ringbuffer {
 
 	unsigned int wptr; /* write pointer offset in dwords from baseaddr */
 	unsigned int rptr; /* read pointer offset in dwords from baseaddr */
-	uint32_t timestamp;
+
+	unsigned int timestamp[KGSL_MEMSTORE_MAX];
 };
 
 
@@ -67,10 +69,8 @@ struct adreno_ringbuffer {
 		gpuaddr += sizeof(uint); \
 	} while (0)
 
-
 /* enable timestamp (...scratch0) memory shadowing */
 #define GSL_RB_MEMPTRS_SCRATCH_MASK 0x1
-#define GSL_RB_INIT_TIMESTAMP(rb)
 
 /* mem rptr */
 #define GSL_RB_CNTL_NO_UPDATE 0x0 /* enable */
@@ -104,7 +104,8 @@ void adreno_ringbuffer_stop(struct adreno_ringbuffer *rb);
 
 void adreno_ringbuffer_close(struct adreno_ringbuffer *rb);
 
-void adreno_ringbuffer_issuecmds(struct kgsl_device *device,
+unsigned int adreno_ringbuffer_issuecmds(struct kgsl_device *device,
+					struct adreno_context *drawctxt,
 					unsigned int flags,
 					unsigned int *cmdaddr,
 					int sizedwords);
@@ -113,16 +114,20 @@ void adreno_ringbuffer_submit(struct adreno_ringbuffer *rb);
 
 void kgsl_cp_intrcallback(struct kgsl_device *device);
 
-int adreno_ringbuffer_extract(struct adreno_ringbuffer *rb,
-				unsigned int *temp_rb_buffer,
-				int *rb_size);
+void adreno_ringbuffer_extract(struct adreno_ringbuffer *rb,
+				struct adreno_ft_data *ft_data);
 
 void
 adreno_ringbuffer_restore(struct adreno_ringbuffer *rb, unsigned int *rb_buff,
 			int num_rb_contents);
 
 unsigned int *adreno_ringbuffer_allocspace(struct adreno_ringbuffer *rb,
-					     unsigned int numcmds);
+						struct adreno_context *context,
+						unsigned int numcmds);
+
+int adreno_ringbuffer_read_pfp_ucode(struct kgsl_device *device);
+
+int adreno_ringbuffer_read_pm4_ucode(struct kgsl_device *device);
 
 static inline int adreno_ringbuffer_count(struct adreno_ringbuffer *rb,
 	unsigned int rptr)
@@ -137,6 +142,13 @@ static inline unsigned int adreno_ringbuffer_inc_wrapped(unsigned int val,
 							unsigned int size)
 {
 	return (val + sizeof(unsigned int)) % size;
+}
+
+/* Decrement a value by 4 bytes with wrap-around based on size */
+static inline unsigned int adreno_ringbuffer_dec_wrapped(unsigned int val,
+							unsigned int size)
+{
+	return (val + size - sizeof(unsigned int)) % size;
 }
 
 #endif  /* __ADRENO_RINGBUFFER_H */

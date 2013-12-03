@@ -1,4 +1,4 @@
-/* Copyright (c) 2002,2008-2011, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2002,2008-2011, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -13,9 +13,7 @@
 #ifndef __KGSL_LOG_H
 #define __KGSL_LOG_H
 
-#ifdef CONFIG_DEBUG_FS
 extern unsigned int kgsl_cff_dump_enable;
-#endif
 
 #define KGSL_LOG_INFO(dev, lvl, fmt, args...) \
 	do { \
@@ -49,6 +47,16 @@ extern unsigned int kgsl_cff_dump_enable;
 	do { dev_crit(_dev->dev, fmt, ##args); } while (0)
 
 #define KGSL_LOG_DUMP(_dev, fmt, args...)	dev_err(_dev->dev, fmt, ##args)
+
+#define KGSL_DEV_ERR_ONCE(_dev, fmt, args...) \
+({ \
+	static bool kgsl_dev_err_once; \
+							\
+	if (!kgsl_dev_err_once) { \
+		kgsl_dev_err_once = true; \
+		dev_crit(_dev->dev, "|%s| " fmt, __func__, ##args); \
+	} \
+})
 
 #define KGSL_DRV_INFO(_dev, fmt, args...) \
 KGSL_LOG_INFO(_dev->dev, _dev->drv_log, fmt, ##args)
@@ -94,6 +102,15 @@ KGSL_LOG_WARN(_dev->dev, _dev->pwr_log, fmt, ##args)
 KGSL_LOG_ERR(_dev->dev, _dev->pwr_log, fmt, ##args)
 #define KGSL_PWR_CRIT(_dev, fmt, args...) \
 KGSL_LOG_CRIT(_dev->dev, _dev->pwr_log, fmt, ##args)
+
+#define KGSL_FT_INFO(_dev, fmt, args...) \
+KGSL_LOG_INFO(_dev->dev, _dev->ft_log, fmt, ##args)
+#define KGSL_FT_WARN(_dev, fmt, args...) \
+KGSL_LOG_WARN(_dev->dev, _dev->ft_log, fmt, ##args)
+#define KGSL_FT_ERR(_dev, fmt, args...) \
+KGSL_LOG_ERR(_dev->dev, _dev->ft_log, fmt, ##args)
+#define KGSL_FT_CRIT(_dev, fmt, args...) \
+KGSL_LOG_CRIT(_dev->dev, _dev->ft_log, fmt, ##args)
 
 /* Core error messages - these are for core KGSL functions that have
    no device associated with them (such as memory) */
