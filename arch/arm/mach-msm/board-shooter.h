@@ -92,9 +92,6 @@
 #define MSM_ION_WB_BASE          0x45C00000
 //#define MSM_ION_SF_BASE		(0x70000000 - MSM_ION_SF_SIZE)
 
-#define MSM_FB_BASE	(0x6B000000)  /*MSM_PMEM_AUDIO_BASE is 0x6BACA000*/
-                                              /*to avoid alignment,  use 0x6BA00000 - 0xA00000*/
-
 #define MSM_PMEM_KERNEL_EBI1_BASE	0x600000
 
 #ifdef CONFIG_TZCOM

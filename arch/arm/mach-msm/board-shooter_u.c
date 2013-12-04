@@ -2387,15 +2387,15 @@ static struct platform_device ion_dev = {
 
 static void __init msm8x60_allocate_memory_regions(void)
 {
+        void *addr;
 	unsigned long size;
 
 	size = MSM_FB_SIZE;
-	msm_fb_resources[0].start = MSM_FB_BASE;
-	if (mem_size_mb == 1024)
-			msm_fb_resources[0].start += 0x10000000;
+        addr = alloc_bootmem_align(size, 0x1000);
+        msm_fb_resources[0].start = __pa(addr);
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
-	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for fb\n",
-		size, __va(MSM_FB_BASE), (unsigned long) MSM_FB_BASE);
+        pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
+                size, addr, __pa(addr));
 #ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
 	size = MSM_OVERLAY_BLT_SIZE;
 	msm_fb_resources[1].start = MSM_OVERLAY_BLT_SIZE;
