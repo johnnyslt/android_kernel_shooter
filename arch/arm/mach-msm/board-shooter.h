@@ -70,19 +70,23 @@
 #define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE + MSM_FB_DSUB_PMEM_ADDER, 4096)
 #endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
 
-#define MSM_PMEM_ADSP_BASE      0x40400000 /* 40MB */
+/* PMEM Memory map  */
 #define MSM_PMEM_ADSP_SIZE      0x239C000 /* 36MB */
+#define MSM_PMEM_AUDIO_SIZE     0x239000 /* 2MB  */
 
-#define MSM_PMEM_AUDIO_SIZE     0x239000 /* 22MB  */
-#define MSM_PMEM_AUDIO_BASE     0x41C00000 /* 100MB  */
+#define MSM_PMEM_ADSP_BASE      (0x70000000 - MSM_PMEM_ADSP_SIZE)
+#define MSM_PMEM_AUDIO_BASE     0x46400000 /* 110MB  */
+/* End PMEM */
 
-#define MSM_ION_HEAP_NUM        4
+/* ION Memory map */
+#define MSM_ION_HEAP_NUM        3
 
 #define MSM_ION_SF_SIZE         0x3600000 /* 54 MB */
-#define MSM_ION_ROTATOR_SIZE    0x1700000
 #define MSM_ION_WB_SIZE         0x2FD000 /* 30MB  */
-#define MSM_ION_WB_BASE         0x45C00000 /* 110MB  */
 
+#define MSM_ION_SF_BASE         0x40400000 /* 100 MB */
+#define MSM_ION_WB_BASE         0x45C00000
+/* End ION */
 
 #define MSM_SMI_BASE		0x38000000
 #define MSM_SMI_SIZE		0x4000000
