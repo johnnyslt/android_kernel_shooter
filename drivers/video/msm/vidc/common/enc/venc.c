@@ -37,7 +37,6 @@
 #define VID_ENC_NAME	"msm_vidc_enc"
 static char *node_name[2] = {"", "_sec"};
 
-
 #if DEBUG
 #define DBG(x...) printk(KERN_DEBUG x)
 #else
@@ -415,10 +414,9 @@ static u32 vid_enc_msg_pending(struct video_client_ctx *client_ctx)
 				__func__);
 			return client_ctx->stop_msg;
 		}
-	} else {
+	} else
 		DBG("%s(): vid_enc msg queue Not empty\n",
 			__func__);
-		}
 
 	return !islist_empty;
 }
@@ -479,17 +477,13 @@ static u32 vid_enc_close_client(struct video_client_ctx *client_ctx)
 			rc = wait_for_completion_timeout(&client_ctx->event,
 				5 * HZ);
 			if (!rc) {
-/* HTC_START */
-				INFO("%s:Warning: vcd_stop time out"
+				ERR("%s:ERROR vcd_stop time out"
 				"rc = %d\n", __func__, rc);
-/* HTC_END */
 			}
 
 			if (client_ctx->event_status) {
-/* HTC_START */
-				INFO("%s:Warning "
+				ERR("%s:ERROR "
 				"vcd_stop Not successs\n", __func__);
-/* HTC_END */
 			}
 		}
 	}
@@ -523,7 +517,7 @@ static int vid_enc_open_client(struct video_client_ctx **vid_clnt_ctx,
 {
 	s32 client_index;
 	struct video_client_ctx *client_ctx;
-	int rc = VCD_ERR_FAIL;
+	int rc = 0;
 	u8 client_count = 0;
 
 	INFO("\n msm_vidc_enc: Inside %s()", __func__);
@@ -550,14 +544,12 @@ static int vid_enc_open_client(struct video_client_ctx **vid_clnt_ctx,
 
 	client_index = vid_enc_get_empty_client_index();
 
-	/* HTC_START (klockwork issue)*/
-	if (client_index < 0) {
+	if (client_index == -1) {
 		ERR("%s() : No free clients client_index == -1\n",
 			__func__);
 		rc = -ENODEV;
 		goto client_failure;
 	}
-    /* HTC_END */
 
 	client_ctx =
 		&vid_enc_device_p->venc_clients[client_index];
@@ -920,20 +912,16 @@ static long vid_enc_ioctl(struct file *file,
 	{
 		enum venc_buffer_dir buffer_dir;
 		struct venc_bufferpayload buffer_info;
-		if (copy_from_user(&venc_msg, arg, sizeof(venc_msg))) {
-/* HTC_START*/
-			pr_info("[VID] VENC_FREE_BUF ERR 1");
+		if (copy_from_user(&venc_msg, arg, sizeof(venc_msg)))
 			return -EFAULT;
-		}
+
 		DBG("VEN_IOCTL_CMD_FREE_INPUT_BUFFER/"
 			"VEN_IOCTL_CMD_FREE_OUTPUT_BUFFER\n");
 
 		if (copy_from_user(&buffer_info, venc_msg.in,
-			sizeof(buffer_info))) {
-/* HTC_START */
-			pr_info("[VID] VENC_FREE_BUF ERR 2");
+			sizeof(buffer_info)))
 			return -EFAULT;
-		}
+
 		buffer_dir = VEN_BUFFER_TYPE_INPUT;
 		if (cmd == VEN_IOCTL_CMD_FREE_OUTPUT_BUFFER)
 			buffer_dir = VEN_BUFFER_TYPE_OUTPUT;
@@ -943,8 +931,6 @@ static long vid_enc_ioctl(struct file *file,
 		if (!result) {
 			DBG("\n VEN_IOCTL_CMD_FREE_OUTPUT_BUFFER"
 				"/VEN_IOCTL_CMD_FREE_OUTPUT_BUFFER failed");
-/* HTC_START */
-			pr_info("[VID] VENC_FREE_BUF ERR 3");
 			return -EIO;
 		}
 		break;
@@ -1407,9 +1393,6 @@ static long vid_enc_ioctl(struct file *file,
 	case VEN_IOCTL_GET_SEQUENCE_HDR:
 	{
 		struct venc_seqheader seq_header, seq_header_user;
-		/* HTC_START (klockwork issue)*/
-		memset(&seq_header, 0, sizeof(struct venc_seqheader));
-		/* HTC_END */
 		if (copy_from_user(&venc_msg, arg, sizeof(venc_msg)))
 			return -EFAULT;
 

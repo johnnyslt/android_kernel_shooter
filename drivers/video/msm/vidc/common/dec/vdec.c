@@ -37,9 +37,9 @@
 
 
 
-#define DBG(x...) pr_debug("[VID] " x)
-#define INFO(x...) pr_info("[VID] " x)
-#define ERR(x...) pr_err("[VID] " x)
+#define DBG(x...) pr_debug(x)
+#define INFO(x...) pr_info(x)
+#define ERR(x...) pr_err(x)
 
 #define VID_DEC_NAME "msm_vidc_dec"
 
@@ -1264,6 +1264,7 @@ static u32 vid_dec_fill_output_buffer(struct video_client_ctx *client_ctx,
 	struct file *file;
 	s32 buffer_index = -1;
 	u32 vcd_status = VCD_ERR_FAIL;
+
 	struct vcd_frame_data vcd_frame;
 
 	if (!client_ctx || !fill_buffer_cmd)
@@ -2023,7 +2024,6 @@ int vid_dec_open_client(struct video_client_ctx **vid_clnt_ctx, int flags)
 		return -EINVAL;
 	}
 	*vid_clnt_ctx = NULL;
-
 	client_count = vcd_get_num_of_clients();
 	if (client_count == VIDC_MAX_NUM_CLIENTS) {
 		ERR("ERROR : vid_dec_open() max number of clients"
@@ -2085,7 +2085,6 @@ client_failure:
 	return rc;
 }
 
-
 static int vid_dec_open_secure(struct inode *inode, struct file *file)
 {
 	int rc = 0;
@@ -2098,6 +2097,7 @@ static int vid_dec_open_secure(struct inode *inode, struct file *file)
 		rc = -ENOMEM;
 		goto error;
 	}
+
 	file->private_data = client_ctx;
 	if (res_trk_open_secure_session()) {
 		ERR("Secure session operation failure\n");
@@ -2126,6 +2126,7 @@ static int vid_dec_open(struct inode *inode, struct file *file)
 		mutex_unlock(&vid_dec_device_p->lock);
 		return -ENOMEM;
 	}
+
 	file->private_data = client_ctx;
 	mutex_unlock(&vid_dec_device_p->lock);
 	return rc;
@@ -2135,7 +2136,7 @@ static int vid_dec_release_secure(struct inode *inode, struct file *file)
 {
 	struct video_client_ctx *client_ctx = file->private_data;
 
-	DBG("msm_vidc_dec: Inside %s()", __func__);
+	INFO("msm_vidc_dec: Inside %s()", __func__);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_OUTPUT);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_INPUT);
 	vid_dec_close_client(client_ctx);
@@ -2143,7 +2144,7 @@ static int vid_dec_release_secure(struct inode *inode, struct file *file)
 #ifndef USE_RES_TRACKER
 	vidc_disable_clk();
 #endif
-	DBG("msm_vidc_dec: Return from %s()", __func__);
+	INFO("msm_vidc_dec: Return from %s()", __func__);
 	return 0;
 }
 
@@ -2178,7 +2179,6 @@ static const struct file_operations vid_dec_fops[2] = {
 	},
 
 };
-
 
 void vid_dec_interrupt_deregister(void)
 {
@@ -2312,13 +2312,12 @@ error_vid_dec_class_create:
 error_vid_dec_alloc_chrdev_region:
 	kfree(vid_dec_device_p);
 	return rc;
-
 }
 
 static void __exit vid_dec_exit(void)
 {
 	int i = 0;
-	DBG("msm_vidc_dec: Inside %s()", __func__);
+	INFO("msm_vidc_dec: Inside %s()", __func__);
 	for (i = 0; i < NUM_OF_DRIVER_NODES; i++)
 		cdev_del(&(vid_dec_device_p->cdev[i]));
 	device_destroy(vid_dec_class, vid_dec_dev_num);
