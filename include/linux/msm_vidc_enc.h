@@ -443,8 +443,10 @@ struct venc_ioctl_msg{
 
 #define VEN_IOCTL_GET_NUMBER_INSTANCES \
 	_IOR(VEN_IOCTLBASE_ENC, 46, struct venc_ioctl_msg)
+
 #define VEN_IOCTL_SET_METABUFFER_MODE \
 	_IOW(VEN_IOCTLBASE_ENC, 47, struct venc_ioctl_msg)
+
 
 /*IOCTL params:SET: InputData - unsigned int, OutputData - NULL.*/
 #define VEN_IOCTL_SET_EXTRADATA \
@@ -456,6 +458,14 @@ struct venc_ioctl_msg{
 /*IOCTL params:SET: InputData - NULL, OutputData - NULL.*/
 #define VEN_IOCTL_SET_SLICE_DELIVERY_MODE \
 	_IO(VEN_IOCTLBASE_ENC, 50)
+
+/*IOCTL params:SET: InputData - unsigned int, OutputData - NULL*/
+#define VEN_IOCTL_SET_SPS_PPS_FOR_IDR \
+	_IOW(VEN_IOCTLBASE_ENC, 51, struct venc_ioctl_msg)
+
+/*IOCTL params:SET: InputData - NULL, OutputData - NULL.*/
+#define VEN_IOCTL_SET_VUI_BITSTREAM_RESTRICT_FLAG \
+	_IO(VEN_IOCTLBASE_ENC, 52)
 
 struct venc_switch{
 	unsigned char	status;
@@ -539,7 +549,7 @@ struct venc_capability{
 };
 
 struct venc_entropycfg{
-	unsigned longentropysel;
+	unsigned long	entropysel;
 	unsigned long	cabacmodel;
 };
 
