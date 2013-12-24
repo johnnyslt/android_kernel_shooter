@@ -2267,15 +2267,16 @@ static struct ion_platform_data ion_pdata = {
 .nr = MSM_ION_HEAP_NUM,
 	.heaps = {
     {
-	.id	= ION_SYSTEM_HEAP_ID,
-	.type	= ION_HEAP_TYPE_SYSTEM,
-	.name	= ION_VMALLOC_HEAP_NAME,
+	.id    = ION_SYSTEM_HEAP_ID,
+	.type  = ION_HEAP_TYPE_SYSTEM,
+	.name  = ION_VMALLOC_HEAP_NAME,
     },
     {
-      .id        = ION_CP_MM_HEAP_ID,
-      .type        = ION_HEAP_TYPE_CP,
-      .name        = ION_MM_HEAP_NAME,
-      .size        = MSM_ION_MM_SIZE,
+      .id   = ION_CP_MM_HEAP_ID,
+      .type = ION_HEAP_TYPE_CP,
+      .name = ION_MM_HEAP_NAME,
+      .base = MSM_ION_MM_BASE,
+      .size = MSM_ION_MM_SIZE,
       .memory_type = ION_SMI_TYPE,
       .extra_data = (void *) &cp_mm_ion_pdata,
     },
@@ -3826,7 +3827,7 @@ static void __init reserve_pmem_memory(void)
 static void __init reserve_ion_memory(void)
 {
 #if defined(CONFIG_ION_MSM) && defined(CONFIG_MSM_MULTIMEDIA_USE_ION)
-  msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
+  msm8x60_reserve_table[MEMTYPE_SMI_ION].size += MSM_ION_MM_SIZE;
   msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
 #endif
 }
