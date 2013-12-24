@@ -3773,11 +3773,16 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 		.limit	= USER_SMI_SIZE,
 		.flags	= MEMTYPE_FLAGS_FIXED,
 	},
+       [MEMTYPE_SMI_ION] = {
+              .start  =  MSM_SMI_ION_BASE,
+              .limit  =  MSM_SMI_ION_SIZE,
+              .flags  =  MEMTYPE_FLAGS_FIXED,
+      },
 	[MEMTYPE_EBI0] = {
 		.flags	= MEMTYPE_FLAGS_1M_ALIGN,
 	},
 	[MEMTYPE_EBI1] = {
-		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
+		.flags	= MEMTYPE_FLAGS_1M_ALIGN,
 	},
 };
 

@@ -73,8 +73,10 @@
 #define MSM_ION_MM_SIZE         0x29A0000 /* (43MB) */
 #define MSM_ION_SF_SIZE         0x29A0000 /* 41.625MB */
 #define MSM_ION_WB_SIZE         0x2FD000 /* 2.99MB  */
+#define MSM_SMI_ION_SIZE        0x3000000
 
 #define MSM_ION_SF_BASE         0x40400000
+#define MSM_SMI_ION_BASE        0x40400000
 #define MSM_ION_WB_BASE         0x45C00000
 /* End ION */
 
