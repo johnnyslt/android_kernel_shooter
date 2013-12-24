@@ -68,13 +68,11 @@
 /* End PMEM */
 
 /* ION Memory map */
-#define MSM_ION_HEAP_NUM        6
+#define MSM_ION_HEAP_NUM        4
 
 #define MSM_ION_MM_SIZE         0x29A0000 /* (43MB) */
 #define MSM_ION_SF_SIZE         0x29A0000 /* 41.625MB */
 #define MSM_ION_WB_SIZE         0x2FD000 /* 2.99MB  */
-#define MSM_ION_MM_FW_SIZE      0x200000 /* (2MB) */
-#define MSM_ION_MFC_SIZE        SZ_8K
 
 #define MSM_ION_SF_BASE         0x40400000
 #define MSM_ION_WB_BASE         0x45C00000
