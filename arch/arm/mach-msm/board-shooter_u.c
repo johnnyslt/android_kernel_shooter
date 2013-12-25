@@ -3823,14 +3823,13 @@ static void __init reserve_pmem_memory(void)
 	reserve_memory_for(&android_pmem_audio_pdata);
 #endif
 }
+#ifdef CONFIG_ION_MSM
 
 static void __init reserve_ion_memory(void)
 {
-#if defined(CONFIG_ION_MSM) && defined(CONFIG_MSM_MULTIMEDIA_USE_ION)
-  msm8x60_reserve_table[MEMTYPE_SMI_ION].size += MSM_ION_MM_SIZE;
-  msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
-#endif
+// nothing
 }
+#endif
 
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
