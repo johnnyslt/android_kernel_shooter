@@ -57,7 +57,7 @@
 #endif
 
 /* Note: must be a multiple of 4096 */
-#define MSM_FB_SIZE 0x6F0000
+#define MSM_FB_SIZE roundup((960 * ALIGN(540, 32) * 4 * 3) + 0x3F4800, 4096)
 
 /* PMEM Memory map  */
 #define MSM_PMEM_ADSP_SIZE      0x1200000 /* 18MB */
@@ -70,10 +70,10 @@
 /* ION Memory map */
 #define MSM_ION_HEAP_NUM        4
 
-#define MSM_ION_MM_SIZE         0x2C00000
-#define MSM_ION_SF_SIZE         0x2800000
+#define MSM_ION_MM_SIZE         0x3000000
+#define MSM_ION_SF_SIZE         0x29A0000
 #define MSM_ION_WB_SIZE         0x2FD000
-#define MSM_SMI_ION_SIZE        0x3000000
+#define MSM_SMI_ION_SIZE        0x3200000
 
 #define MSM_SMI_ION_BASE        0x40400000
 #define MSM_ION_MM_BASE         0x40400000
@@ -100,7 +100,7 @@
 #define MSM_PMEM_SMIPOOL_SIZE	USER_SMI_SIZE
 
 #define PHY_BASE_ADDR1		0x48000000
-#define SIZE_ADDR1		0x34600000
+#define SIZE_ADDR1		0x34200000
 
 /* GPIO definition */
 
