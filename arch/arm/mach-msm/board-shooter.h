@@ -72,12 +72,12 @@
 
 #define MSM_ION_MM_SIZE         0x3000000
 #define MSM_ION_SF_SIZE         0x29A0000
-#define MSM_ION_WB_SIZE         0x2FD000
+#define MSM_ION_WB_SIZE         0x800000
 #define MSM_SMI_ION_SIZE        0x3200000
 
 #define MSM_SMI_ION_BASE        0x40400000
 #define MSM_ION_MM_BASE         0x40400000
-#define MSM_ION_WB_BASE         0x45C00000
+#define MSM_ION_WB_BASE         0x46100000
 #define MSM_ION_SF_BASE         0x7C600000
 /* End ION */
 
@@ -100,7 +100,7 @@
 #define MSM_PMEM_SMIPOOL_SIZE	USER_SMI_SIZE
 
 #define PHY_BASE_ADDR1		0x48000000
-#define SIZE_ADDR1		0x34200000
+#define SIZE_ADDR1		0x34000000
 
 /* GPIO definition */
 
