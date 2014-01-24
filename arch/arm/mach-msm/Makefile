@@ -382,10 +382,10 @@ obj-$(CONFIG_MACH_SHOOTER_K) += board-shooter_k-keypad.o
 obj-$(CONFIG_MACH_SHOOTER_K) += board-shooter_k-audio.o
 obj-$(CONFIG_MACH_SHOOTER_K) += htc_bdaddress.o board-shooter_k-rfkill.o
 obj-$(CONFIG_MACH_SHOOTER_CT) += board-shooter_ct.o
-obj-$(CONFIG_MACH_SHOOTER_CT) += board-shooter_ct-keypad.o
-obj-$(CONFIG_MACH_SHOOTER_CT) += board-shooter_ct-audio.o
-obj-$(CONFIG_MACH_SHOOTER_CT) += htc_bdaddress.o board-shooter_ct-rfkill.o
-obj-$(CONFIG_MACH_SHOOTER_CT) += board-shooter_ct-mmc.o board-shooter_ct-wifi.o
+obj-$(CONFIG_MACH_SHOOTER_CT) += board-shooter-keypad.o
+obj-$(CONFIG_MACH_SHOOTER_CT) += board-shooter-audio.o
+obj-$(CONFIG_MACH_SHOOTER_CT) += htc_bdaddress.o board-shooter-rfkill.o
+obj-$(CONFIG_MACH_SHOOTER_CT) += board-shooter-mmc.o board-shooter-wifi.o
 
 
 ifeq ($(CONFIG_WIMAX),y)

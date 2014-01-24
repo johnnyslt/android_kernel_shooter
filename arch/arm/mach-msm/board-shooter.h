@@ -196,7 +196,7 @@
 #define shooter_SPI_CLK			(36)
 
 /* CAMERA SPI */
-#ifdef CONFIG_MACH_SHOOTER_U
+#if defined (CONFIG_MACH_SHOOTER_U) || defined (CONFIG_MACH_SHOOTER_CT)
 #define SHOOTER_SP3D_SPI_DO		(41)
 #define SHOOTER_SP3D_SPI_DI		(42)
 #define SHOOTER_SP3D_SPI_CS		(43)
