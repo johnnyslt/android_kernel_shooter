@@ -99,8 +99,11 @@
 #define MSM_PMEM_SMIPOOL_BASE	USER_SMI_BASE
 #define MSM_PMEM_SMIPOOL_SIZE	USER_SMI_SIZE
 
-#define PHY_BASE_ADDR1		0x48000000
-#define SIZE_ADDR1		0x34000000
+#ifdef CONFIG_MACH_SHOOTER_CT
+#define PHY_BASE_ADDR1          0x48800000
+#else
+#define PHY_BASE_ADDR1          0x48000000
+#define SIZE_ADDR1              0x34000000
 
 /* GPIO definition */
 
