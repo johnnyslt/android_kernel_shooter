@@ -103,6 +103,7 @@
 #define PHY_BASE_ADDR1          0x48800000
 #else
 #define PHY_BASE_ADDR1          0x48000000
+#endif
 #define SIZE_ADDR1              0x34000000
 
 /* GPIO definition */
