@@ -45,6 +45,9 @@
 #include <linux/i2c/bq27520.h>
 #include "sysinfo-8x60.h"
 
+#include <linux/ion.h>
+#include <mach/ion.h>
+
 #include <linux/persistent_ram.h>
 
 #ifdef CONFIG_ANDROID_PMEM
@@ -136,6 +139,10 @@
 
 #ifdef CONFIG_PERFLOCK
 #include <mach/perflock.h>
+#endif
+
+#ifdef CONFIG_ION_MSM
+static struct platform_device ion_dev;
 #endif
 
 int __init pyd_init_panel(struct resource *res, size_t size);
@@ -288,7 +295,7 @@ static void (*sdc5_status_notify_cb)(int card_present, void *dev_id);
 static void *sdc5_status_notify_cb_devid;
 #endif
 
-static unsigned int engineerid, mem_size_mb;
+static unsigned int engineerid;
 
 #define _GET_REGULATOR(var, name) do {				\
 	var = regulator_get(NULL, name);			\
@@ -1971,14 +1978,6 @@ static int __init fb_size_setup(char *p)
 early_param("fb_size", fb_size_setup);
 
 #ifdef CONFIG_ANDROID_PMEM
-static unsigned pmem_sf_size = MSM_PMEM_SF_SIZE;
-static int __init pmem_sf_size_setup(char *p)
-{
-	pmem_sf_size = memparse(p, NULL);
-	return 0;
-}
-early_param("pmem_sf_size", pmem_sf_size_setup);
-
 static unsigned pmem_adsp_size = MSM_PMEM_ADSP_SIZE;
 
 static int __init pmem_adsp_size_setup(char *p)
@@ -2014,18 +2013,6 @@ static struct platform_device shooter_3Dpanel_device = {
 };
 
 #ifdef CONFIG_ANDROID_PMEM
-static struct android_pmem_platform_data android_pmem_pdata = {
-	.name		= "pmem",
-	.allocator_type	= PMEM_ALLOCATORTYPE_ALLORNOTHING,
-	.cached		= 1,
-};
-
-static struct platform_device android_pmem_device = {
-	.name	= "android_pmem",
-	.id	= 0,
-	.dev	= {.platform_data = &android_pmem_pdata},
-};
-
 static struct android_pmem_platform_data android_pmem_adsp_pdata = {
 	.name		= "pmem_adsp",
 	.allocator_type	= PMEM_ALLOCATORTYPE_BITMAP,
@@ -2036,18 +2023,6 @@ static struct platform_device android_pmem_adsp_device = {
 	.name	= "android_pmem",
 	.id	= 2,
 	.dev	= { .platform_data = &android_pmem_adsp_pdata },
-};
-
-static struct android_pmem_platform_data android_pmem_adsp2_pdata = {
-	.name		= "pmem_adsp2",
-	.allocator_type	= PMEM_ALLOCATORTYPE_BITMAP,
-	.cached		= 0,
-};
-
-static struct platform_device android_pmem_adsp2_device = {
-	.name	= "android_pmem",
-	.id	= 3,
-	.dev	= { .platform_data = &android_pmem_adsp2_pdata },
 };
 
 static struct android_pmem_platform_data android_pmem_audio_pdata = {
@@ -2099,6 +2074,27 @@ void pmem_release_smi_region(void *data)
 }
 
 void *pmem_setup_smi_region(void)
+{
+	return (void *)msm_bus_scale_register_client(&smi_client_pdata);
+}
+
+int request_smi_region(void *data)
+{
+	int bus_id = (int) data;
+
+	msm_bus_scale_client_update_request(bus_id, 1);
+	return 0;
+}
+
+int release_smi_region(void *data)
+{
+	int bus_id = (int) data;
+
+	msm_bus_scale_client_update_request(bus_id, 0);
+	return 0;
+}
+
+void *setup_smi_region(void)
 {
 	return (void *)msm_bus_scale_register_client(&smi_client_pdata);
 }
@@ -2184,26 +2180,109 @@ struct persistent_ram ram_console_ram = {
 	.descs		= &ram_console_desc,
 };
 
+#ifdef CONFIG_ION_MSM
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+static struct ion_co_heap_pdata co_ion_pdata = {
+  .adjacent_mem_id = INVALID_HEAP_ID,
+  .align = PAGE_SIZE,
+};
+
+static struct ion_cp_heap_pdata cp_mm_ion_pdata = {
+        .permission_type = IPT_TYPE_MM_CARVEOUT,
+        .align = PAGE_SIZE,
+        .request_region = request_smi_region,
+        .release_region = release_smi_region,
+        .setup_region = setup_smi_region,
+};
+
+static struct ion_co_heap_pdata fw_co_ion_pdata = {
+  .adjacent_mem_id = ION_CP_MM_HEAP_ID,
+  .align = SZ_128K,
+};
+
+static struct ion_cp_heap_pdata cp_wb_ion_pdata = {
+	.permission_type = IPT_TYPE_MDP_WRITEBACK,
+	.align = PAGE_SIZE,
+};
+
+#endif
+#endif
+
+/*
+ * These heaps are listed in the order they will be allocated.
+ * Don't swap the order unless you know what you are doing!
+ */
+static struct ion_platform_data ion_pdata = {
+.nr = MSM_ION_HEAP_NUM,
+	.heaps = {
+    {
+	.id    = ION_SYSTEM_HEAP_ID,
+	.type  = ION_HEAP_TYPE_SYSTEM,
+	.name  = ION_VMALLOC_HEAP_NAME,
+    },
+    {
+      .id   = ION_CP_MM_HEAP_ID,
+      .type = ION_HEAP_TYPE_CP,
+      .name = ION_MM_HEAP_NAME,
+      .base = MSM_ION_MM_BASE,
+      .size = MSM_ION_MM_SIZE,
+      .memory_type = ION_SMI_TYPE,
+      .extra_data = (void *) &cp_mm_ion_pdata,
+    },
+    {
+      .id  = ION_MM_FIRMWARE_HEAP_ID,
+      .type  = ION_HEAP_TYPE_CARVEOUT,
+      .name  = ION_MM_FIRMWARE_HEAP_NAME,
+      .base  = MSM_ION_MM_FW_BASE,
+      .size  = MSM_ION_MM_FW_SIZE,
+      .memory_type = ION_SMI_TYPE,
+      .extra_data = (void *) &fw_co_ion_pdata,
+    },
+    {
+      .id	= ION_SF_HEAP_ID,
+      .type	= ION_HEAP_TYPE_CARVEOUT,
+      .name	= ION_SF_HEAP_NAME,
+      .base   = MSM_ION_SF_BASE,
+      .size	= MSM_ION_SF_SIZE,
+      .memory_type = ION_EBI_TYPE,
+      .extra_data = (void *)&co_ion_pdata,
+    },
+    {
+      .id	= ION_CP_WB_HEAP_ID,
+      .type	= ION_HEAP_TYPE_CP,
+      .base	= MSM_ION_WB_BASE,
+      .name	= ION_WB_HEAP_NAME,
+      .size	= MSM_ION_WB_SIZE,
+      .memory_type = ION_EBI_TYPE,
+      .extra_data = (void *) &cp_wb_ion_pdata,
+    },
+    }
+};
+
+static struct platform_device ion_dev = {
+  .name = "ion-msm",
+  .id = 1,
+  .dev = { .platform_data = &ion_pdata },
+};
+
 static void __init msm8x60_allocate_memory_regions(void)
 {
+        void *addr;
 	unsigned long size;
 
 	size = MSM_FB_SIZE;
-	msm_fb_resources[0].start = MSM_FB_BASE;
-	if (mem_size_mb == 1024)
-			msm_fb_resources[0].start += 0x10000000;
+        addr = alloc_bootmem_align(size, 0x1000);
+        msm_fb_resources[0].start = __pa(addr);
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
-	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for fb\n",
-		size, __va(MSM_FB_BASE), (unsigned long) MSM_FB_BASE);
-
+        pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
+                size, addr, __pa(addr));
+#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
 	size = MSM_OVERLAY_BLT_SIZE;
-	msm_fb_resources[1].start = MSM_OVERLAY_BLT_BASE;
-	if (mem_size_mb == 1024)
-			msm_fb_resources[1].start += 0x10000000;
+	msm_fb_resources[1].start = MSM_OVERLAY_BLT_SIZE;
 	msm_fb_resources[1].end = msm_fb_resources[1].start + size - 1;
 	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for overlay\n",
 		size, __va(MSM_OVERLAY_BLT_BASE), (unsigned long) msm_fb_resources[1].start);
-	
+#endif
 	persistent_ram_early_init(&ram_console_ram);
 }
 
@@ -2220,8 +2299,9 @@ static int shooter_ts_atmel_power(int on)
 
 struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 	{
-		.version = 0x020,
-		.source = 1, /* ALPS, Nissha */
+		.version = 0x011,
+		.source = 1, /* Nissha */
+		.build = 0xAA,
 		.abs_x_min = 5,
 		.abs_x_max = 1018,
 		.abs_y_min = 7,
@@ -2233,29 +2313,157 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.gpio_irq = shooter_TP_ATT_N,
 		.power = shooter_ts_atmel_power,
 		.unlock_attr = 1,
-		.report_both = REPORT_BOTH_DATA,
 		.config_T6 = {0, 0, 0, 0, 0, 0},
 		.config_T7 = {16, 8, 50},
-		.config_T8 = {9, 0, 5, 2, 0, 0, 5, 20, 5, 192},
-		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 248, 228, 5, 5, 145, 50, 139, 80, 15, 10},
-		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T8 = {30, 0, 5, 5, 0, 0, 2, 30, 16, 192},
+		.config_T9 = {139, 0, 0, 20, 10, 0, 32, 60, 2, 1, 0, 5, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 247, 224, 3, 249, 137, 62, 145, 72, 18, 13, 53, 58, 0},
+		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T18 = {0, 0},
-		.config_T19 = {0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T20 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T22 = {15, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 7, 18, 255, 255, 0},
-		.config_T23 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T24 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T25 = {3, 0, 16, 39, 124, 21, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T28 = {0, 0, 4, 4, 8, 60},
-		.object_crc = {0x20, 0xCD, 0xC5},
-		.cable_config = {35, 25, 8, 16},
-		.call_tchthr = {45, 50},
-		.locking_config = {20},
-		.noise_config = {45, 2, 35},
-		.GCAF_level = {20, 24, 28, 40, 63},
+		.config_T19 = {3, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T25 = {3, 0, 176, 104, 4, 91, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T40 = {0, 0, 0, 0, 0},
+		.config_T42 = {0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T46 = {0, 4, 16, 16, 0, 0, 0, 0, 0},
+		.config_T47 = {0, 20, 50, 5, 2, 50, 40, 0, 0, 63},
+		.config_T48 = {15, 0, 66, 0, 0, 0, 0, 0, 18, 30, 16, 20, 0, 6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 20, 0, 1, 15, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T55 = {0, 0, 0, 0},
+		.config_T58 = {114, 35, 3, 0, 50, 0, 0, 0, 0, 0, 0},
+		.object_crc = {0x8A, 0xFF, 0xB1},
+		.cable_config = {64, 30, 16, 16, 20},
+		.mferr_config = {150, 90, 16, 32, 20, 3, 2, 0, 0, 0, 0, 0},
 	},
 	{
-		.version = 0x020,
+		.version = 0x011,
+		.source = 0, /* TPK */
+		.build = 0xAA,
+		.abs_x_min = 5,
+		.abs_x_max = 1018,
+		.abs_y_min = 7,
+		.abs_y_max = 905,
+		.abs_pressure_min = 0,
+		.abs_pressure_max = 255,
+		.abs_width_min = 0,
+		.abs_width_max = 20,
+		.gpio_irq = shooter_TP_ATT_N,
+		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
+		.config_T6 = {0, 0, 0, 0, 0, 0},
+		.config_T7 = {16, 8, 50},
+		.config_T8 = {25, 0, 5, 5, 0, 0, 2, 30, 16, 192},
+		.config_T9 = {139, 0, 0, 20, 10, 0, 32, 60, 2, 1, 0, 5, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 247, 250, 18, 4, 138, 60, 148, 75, 18, 13, 53, 58, 0},
+		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T18 = {0, 0},
+		.config_T19 = {3, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T25 = {3, 0, 176, 104, 4, 91, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T40 = {0, 0, 0, 0, 0},
+		.config_T42 = {0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T46 = {0, 4, 16, 16, 0, 0, 0, 0, 0},
+		.config_T47 = {0, 20, 50, 5, 2, 50, 40, 0, 0, 63},
+		.config_T48 = {15, 0, 66, 0, 0, 0, 0, 0, 18, 30, 16, 20, 0, 6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 20, 0, 1, 15, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T55 = {0, 0, 0, 0},
+		.config_T58 = {114, 35, 3, 0, 50, 0, 0, 0, 0, 0, 0},
+		.object_crc = {0xB1, 0xF4, 0xE1},
+		.cable_config = {64, 30, 16, 16, 20},
+		.mferr_config = {150, 90, 16, 32, 20, 3, 2, 0, 0, 0, 0, 0},
+	},
+	{
+		.version = 0x011,
+		.source = 1, /* Nissha */
+		.build = 0xF8,
+		.abs_x_min = 5,
+		.abs_x_max = 1018,
+		.abs_y_min = 7,
+		.abs_y_max = 905,
+		.abs_pressure_min = 0,
+		.abs_pressure_max = 255,
+		.abs_width_min = 0,
+		.abs_width_max = 20,
+		.gpio_irq = shooter_TP_ATT_N,
+		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
+		.config_T6 = {0, 0, 0, 0, 0, 0},
+		.config_T7 = {16, 8, 50},
+		.config_T8 = {30, 0, 5, 5, 0, 0, 2, 30, 16, 192},
+		.config_T9 = {139, 0, 0, 20, 10, 0, 32, 52, 2, 1, 0, 5, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 247, 224, 3, 249, 137, 62, 145, 72, 18, 13, 53, 58, 0},
+		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T18 = {0, 0},
+		.config_T19 = {3, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T23 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T25 = {3, 0, 176, 104, 4, 91, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T40 = {0, 0, 0, 0, 0},
+		.config_T42 = {0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T46 = {0, 4, 8, 8, 0, 0, 0, 0, 0},
+		.config_T47 = {0, 20, 50, 5, 2, 50, 40, 0, 0, 63},
+		.config_T48 = {15, 0, 66, 0, 0, 0, 0, 0, 18, 30, 16, 20, 0, 6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 20, 0, 1, 15, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.object_crc = {0xFB, 0x01, 0xB8},
+		.cable_config = {60, 30, 16, 16, 20},
+		.noiseLine_config = {85, 60, 16, 32, 0, 3, 1},
+	},
+	{
+		.version = 0x011,
+		.source = 0, /* TPK */
+		.build = 0xF8,
+		.abs_x_min = 5,
+		.abs_x_max = 1018,
+		.abs_y_min = 7,
+		.abs_y_max = 905,
+		.abs_pressure_min = 0,
+		.abs_pressure_max = 255,
+		.abs_width_min = 0,
+		.abs_width_max = 20,
+		.gpio_irq = shooter_TP_ATT_N,
+		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
+		.config_T6 = {0, 0, 0, 0, 0, 0},
+		.config_T7 = {16, 8, 50},
+		.config_T8 = {25, 0, 5, 5, 0, 0, 2, 30, 16, 192},
+		.config_T9 = {139, 0, 0, 20, 10, 0, 32, 52, 2, 1, 0, 5, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 247, 250, 18, 4, 138, 60, 148, 75, 18, 13, 53, 58, 0},
+		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T18 = {0, 0},
+		.config_T19 = {3, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T23 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T25 = {3, 0, 176, 104, 4, 91, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T40 = {0, 0, 0, 0, 0},
+		.config_T42 = {0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T46 = {0, 4, 8, 8, 0, 0, 0, 0, 0},
+		.config_T47 = {0, 20, 50, 5, 2, 50, 40, 0, 0, 63},
+		.config_T48 = {15, 0, 66, 0, 0, 0, 0, 0, 18, 30, 16, 20, 0, 6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 20, 0, 1, 15, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.object_crc = {0xA2, 0x81, 0xB6},
+		.cable_config = {60, 30, 16, 16, 20},
+		.noiseLine_config = {85, 60, 16, 32, 0, 3, 1},
+	},
+	{
+		.version = 0x010,
+		.source = 1, /* Nissha */
+		.abs_x_min = 5,
+		.abs_x_max = 1018,
+		.abs_y_min = 7,
+		.abs_y_max = 905,
+		.abs_pressure_min = 0,
+		.abs_pressure_max = 255,
+		.abs_width_min = 0,
+		.abs_width_max = 20,
+		.gpio_irq = shooter_TP_ATT_N,
+		.power = shooter_ts_atmel_power,
+		.unlock_attr = 1,
+		.config_T6 = {0, 0, 0, 0, 0, 0},
+		.config_T7 = {16, 8, 50},
+		.config_T8 = {30, 0, 5, 20, 0, 0, 5, 35, 5, 192},
+		.config_T9 = {139, 0, 0, 20, 10, 0, 32, 52, 2, 1, 0, 5, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 247, 224, 3, 249, 137, 62, 145, 72, 18, 13, 53, 58, 4},
+		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T18 = {0, 0},
+		.config_T19 = {3, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T23 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T25 = {3, 0, 176, 104, 4, 91, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T40 = {0, 0, 0, 0, 0},
+		.config_T42 = {0, 0, 40, 35, 128, 2, 0, 10},
+		.config_T46 = {0, 4, 8, 8, 0, 0, 0, 0, 0},
+		.config_T47 = {0, 20, 50, 5, 2, 50, 40, 0, 0, 63},
+		.config_T48 = {15, 196, 96, 0, 0, 0, 0, 0, 12, 12, 0, 0, 0, 6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 20, 0, 0, 0, 0, 0, 0, 0, 37, 3, 5, 2, 48, 5, 10, 10, 236, 230, 20, 20, 143, 60, 153, 65, 18, 8, 4},
+		.cable_config = {52, 25, 8, 8},
+	},
+	{
+		.version = 0x010,
 		.source = 0, /* TPK */
 		.abs_x_min = 5,
 		.abs_x_max = 1018,
@@ -2268,96 +2476,27 @@ struct atmel_i2c_platform_data shooter_ts_atmel_data[] = {
 		.gpio_irq = shooter_TP_ATT_N,
 		.power = shooter_ts_atmel_power,
 		.unlock_attr = 1,
-		.report_both = REPORT_BOTH_DATA,
 		.config_T6 = {0, 0, 0, 0, 0, 0},
 		.config_T7 = {16, 8, 50},
-		.config_T8 = {8, 0, 5, 2, 0, 0, 5, 20, 5, 192},
-		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 6, 0, 15, 14, 140, 43, 147, 77, 15, 10},
-		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T8 = {25, 0, 5, 20, 0, 0, 5, 35, 5, 192},
+		.config_T9 = {139, 0, 0, 20, 10, 0, 32, 52, 2, 1, 0, 5, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 247, 250, 18, 4, 138, 60, 148, 75, 18, 13, 53, 58, 4},
+		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T18 = {0, 0},
-		.config_T19 = {0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T20 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T22 = {15, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 7, 18, 255, 255, 0},
+		.config_T19 = {3, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		.config_T23 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T24 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T25 = {3, 0, 16, 39, 124, 21, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T28 = {0, 0, 4, 4, 8, 60},
-		.object_crc = {0xA6, 0x13, 0x52},
-		.cable_config = {35, 25, 8, 16},
-		.call_tchthr = {45, 50},
-		.locking_config = {20},
-		.noise_config = {45, 2, 35},
-		.GCAF_level = {20, 24, 28, 40, 63},
-	},
-	{
-		.version = 0x016,
-		.source = 1, /* ALPS, Nissha */
-		.abs_x_min = 5,
-		.abs_x_max = 1018,
-		.abs_y_min = 7,
-		.abs_y_max = 905,
-		.abs_pressure_min = 0,
-		.abs_pressure_max = 255,
-		.abs_width_min = 0,
-		.abs_width_max = 20,
-		.gpio_irq = shooter_TP_ATT_N,
-		.power = shooter_ts_atmel_power,
-		.unlock_attr = 1,
-		.report_both = REPORT_BOTH_DATA,
-		.config_T6 = {0, 0, 0, 0, 0, 0},
-		.config_T7 = {16, 8, 50},
-		.config_T8 = {9, 0, 5, 2, 0, 0, 5, 20},
-		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 248, 228, 5, 5, 145, 50, 139, 80, 15},
-		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T18 = {0, 0},
-		.config_T19 = {0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T20 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T22 = {15, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 7, 18, 255, 255, 0},
-		.config_T23 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T24 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T25 = {3, 0, 16, 39, 124, 21, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T27 = {0, 0, 0, 0, 0, 0, 0},
-		.config_T28 = {0, 0, 4, 4, 8, 60},
-		.cable_config = {35, 25, 8, 16},
-		.GCAF_level = {20, 24, 28, 40, 63},
-	},
-	{
-		.version = 0x016,
-		.source = 0, /* TPK */
-		.abs_x_min = 5,
-		.abs_x_max = 1018,
-		.abs_y_min = 7,
-		.abs_y_max = 905,
-		.abs_pressure_min = 0,
-		.abs_pressure_max = 255,
-		.abs_width_min = 0,
-		.abs_width_max = 20,
-		.gpio_irq = shooter_TP_ATT_N,
-		.power = shooter_ts_atmel_power,
-		.unlock_attr = 1,
-		.report_both = REPORT_BOTH_DATA,
-		.config_T6 = {0, 0, 0, 0, 0, 0},
-		.config_T7 = {16, 8, 50},
-		.config_T8 = {8, 0, 5, 2, 0, 0, 5, 20},
-		.config_T9 = {139, 0, 0, 20, 10, 0, 16, 30, 2, 1, 0, 2, 2, 0, 4, 14, 10, 10, 0, 0, 0, 0, 6, 0, 15, 14, 140, 43, 147, 77, 15},
-		.config_T15 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T18 = {0, 0},
-		.config_T19 = {0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T20 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T22 = {15, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 7, 18, 255, 255, 0},
-		.config_T23 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T24 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T25 = {3, 0, 16, 39, 124, 21, 0, 0, 0, 0, 0, 0, 0, 0},
-		.config_T27 = {0, 0, 0, 0, 0, 0, 0},
-		.config_T28 = {0, 0, 4, 4, 8, 60},
-		.cable_config = {35, 25, 8, 16},
-		.GCAF_level = {20, 24, 28, 40, 63},
+		.config_T25 = {3, 0, 176, 104, 4, 91, 0, 0, 0, 0, 0, 0, 0, 0},
+		.config_T40 = {0, 0, 0, 0, 0},
+		.config_T42 = {0, 0, 40, 35, 128, 2, 0, 10},
+		.config_T46 = {0, 4, 8, 8, 0, 0, 0, 0, 0},
+		.config_T47 = {0, 20, 50, 5, 2, 50, 40, 0, 0, 63},
+		.config_T48 = {15, 196, 96, 0, 0, 0, 0, 0, 12, 12, 0, 0, 0, 6, 6, 0, 0, 100, 4, 64, 10, 0, 20, 5, 0, 38, 0, 20, 0, 0, 0, 0, 0, 0, 0, 37, 3, 5, 2, 48, 5, 10, 10, 236, 230, 20, 20, 143, 60, 153, 65, 18, 8, 4},
+		.cable_config = {52, 25, 8, 8},
 	},
 };
 
 static struct i2c_board_info msm_i2c_gsbi5_info[] = {
 	{
-		I2C_BOARD_INFO(ATMEL_QT602240_NAME, 0x94 >> 1),
+		I2C_BOARD_INFO(ATMEL_MXT224E_NAME, 0x94 >> 1),
 		.platform_data = &shooter_ts_atmel_data,
 		.irq = MSM_GPIO_TO_INT(shooter_TP_ATT_N)
 	},
@@ -3558,11 +3697,9 @@ static struct platform_device *shooter_devices[] __initdata = {
 	&msm_batt_device,
 #endif
 #ifdef CONFIG_ANDROID_PMEM
-	&android_pmem_device,
 	&android_pmem_adsp_device,
-	&android_pmem_adsp2_device,
-	&android_pmem_audio_device,
 	&android_pmem_smipool_device,
+	&android_pmem_audio_device,
 #endif
 #ifdef CONFIG_MSM_ROTATOR
 	&msm_rotator_device,
@@ -3630,7 +3767,11 @@ static struct platform_device *shooter_devices[] __initdata = {
 #endif
 	&pm8058_leds,
 	&msm8660_device_watchdog,
+#ifdef CONFIG_ION_MSM
+        &ion_dev,
+#endif
 };
+
 
 static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 	/* Kernel SMI memory pool for video core, used for firmware */
@@ -3651,11 +3792,20 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 		.limit	= USER_SMI_SIZE,
 		.flags	= MEMTYPE_FLAGS_FIXED,
 	},
+  [MEMTYPE_SMI_ION] = {
+    .start  =  MSM_ION_MM_BASE,
+    .limit  =  MSM_ION_MM_SIZE,
+    .flags  =  MEMTYPE_FLAGS_FIXED,
+  },
 	[MEMTYPE_EBI0] = {
+		.flags	= MEMTYPE_FLAGS_1M_ALIGN,
+	},
+	[MEMTYPE_EBI1] = {
 		.flags	= MEMTYPE_FLAGS_1M_ALIGN,
 	},
 };
 
+#ifdef CONFIG_ANDROID_PMEM
 static void __init size_pmem_device(struct android_pmem_platform_data *pdata, unsigned long start, unsigned long size)
 {
 	pdata->start = start;
@@ -3663,32 +3813,25 @@ static void __init size_pmem_device(struct android_pmem_platform_data *pdata, un
 	pr_info("%s: allocating %lu bytes at 0x%p (0x%lx physical) for %s\n",
 		__func__, size, __va(start), start, pdata->name);
 }
+#endif
 static void __init size_pmem_devices(void)
 {
 #ifdef CONFIG_ANDROID_PMEM
 	size_pmem_device(&android_pmem_adsp_pdata, MSM_PMEM_ADSP_BASE, pmem_adsp_size);
-	size_pmem_device(&android_pmem_adsp2_pdata, MSM_PMEM_ADSP2_BASE, MSM_PMEM_ADSP2_SIZE);
 	size_pmem_device(&android_pmem_smipool_pdata, MSM_PMEM_SMIPOOL_BASE, MSM_PMEM_SMIPOOL_SIZE);
-	if (mem_size_mb == 1024) {
-		size_pmem_device(&android_pmem_audio_pdata, MSM_PMEM_AUDIO_BASE+0x10000000, MSM_PMEM_AUDIO_SIZE);
-		size_pmem_device(&android_pmem_pdata, MSM_PMEM_SF_BASE+0x10000000, MSM_PMEM_SF_SIZE);
-	} else {
-		size_pmem_device(&android_pmem_audio_pdata, MSM_PMEM_AUDIO_BASE, MSM_PMEM_AUDIO_SIZE);
-		size_pmem_device(&android_pmem_pdata, MSM_PMEM_SF_BASE, MSM_PMEM_SF_SIZE);
-	}
+	size_pmem_device(&android_pmem_audio_pdata, MSM_PMEM_AUDIO_BASE, MSM_PMEM_AUDIO_SIZE);
 #endif
 }
 
+#ifdef CONFIG_ANDROID_PMEM
 static void __init reserve_memory_for(struct android_pmem_platform_data *p)
 {
-	/* If we have set a pre-defined PMEM start base,
-	 * no need to reserve it in system again.
-	 */
 	if (p->start == 0) {
-		pr_info("%s: reserving %lx bytes in memory pool for %s.\n", __func__, p->size, p->name);
+		pr_info("%s: reserve %lu bytes from memory %d for %s.\r\n", __func__, p->size, p->memory_type, p->name);
 		msm8x60_reserve_table[p->memory_type].size += p->size;
 	}
 }
+#endif
 
 static void __init reserve_pmem_memory(void)
 {
@@ -3696,19 +3839,26 @@ static void __init reserve_pmem_memory(void)
 	reserve_memory_for(&android_pmem_adsp_pdata);
 	reserve_memory_for(&android_pmem_smipool_pdata);
 	reserve_memory_for(&android_pmem_audio_pdata);
-	reserve_memory_for(&android_pmem_pdata);
 #endif
 }
+#ifdef CONFIG_ION_MSM
+
+static void __init reserve_ion_memory(void)
+{
+// nothing
+}
+#endif
 
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
 	size_pmem_devices();
 	reserve_pmem_memory();
+	reserve_ion_memory();
 }
 
 static int msm8x60_paddr_to_memtype(phys_addr_t paddr)
 {
-	if (paddr >= 0x40000000 && paddr < 0x60000000)
+	if (paddr >= 0x40000000 && paddr < 0x80000000)
 		return MEMTYPE_EBI1;
 	if (paddr >= 0x38000000 && paddr < 0x40000000)
 		return MEMTYPE_SMI;
@@ -4890,41 +5040,11 @@ static struct mpu3050_platform_data mpu3050_data = {
 	},
 };
 
-static struct mpu3050_platform_data mpu3050_data_XC = {
-	.int_config = 0x10,
-	.orientation = { -1, 0, 0, 0, 1, 0, 0, 0, -1 },
-	.level_shifter = 0,
-
-	.accel = {
-		.get_slave_descr = get_accel_slave_descr,
-		.adapt_num = MSM_GSBI10_QUP_I2C_BUS_ID, /* The i2c bus to which the mpu device is connected */
-		.bus = EXT_SLAVE_BUS_SECONDARY,
-		.address = 0x30 >> 1,
-		.orientation = { -1, 0, 0, 0, 1, 0, 0, 0, -1 },
-	},
-
-	.compass = {
-		.get_slave_descr = get_compass_slave_descr,
-		.adapt_num = MSM_GSBI10_QUP_I2C_BUS_ID, /* The i2c bus to which the mpu device is connected */
-		.bus = EXT_SLAVE_BUS_PRIMARY,
-		.address = 0x1A >> 1,
-		.orientation = { -1, 0, 0, 0, 1, 0, 0, 0, -1 },
-	},
-};
-
 static struct i2c_board_info __initdata mpu3050_GSBI10_boardinfo[] = {
 	{
 		I2C_BOARD_INFO("mpu3050", 0xD0 >> 1),
 		.irq = MSM_GPIO_TO_INT(shooter_GYRO_INT),
 		.platform_data = &mpu3050_data,
-	},
-};
-
-static struct i2c_board_info __initdata mpu3050_GSBI10_boardinfo_XC[] = {
-	{
-		I2C_BOARD_INFO("mpu3050", 0xD0 >> 1),
-		.irq = MSM_GPIO_TO_INT(shooter_GYRO_INT),
-		.platform_data = &mpu3050_data_XC,
 	},
 };
 
@@ -5033,23 +5153,12 @@ static void register_i2c_devices(void)
 						msm8x60_i2c_devices[i].len);
 	}
 
-	if (system_rev >= 2) {
-		struct atmel_i2c_platform_data *pdata;
-
-		pdata = msm_i2c_gsbi5_info[0].platform_data;
-		pdata[0].gpio_irq = shooter_TP_ATT_N_XC;
-		pdata[1].gpio_irq = shooter_TP_ATT_N_XC;
-		msm_i2c_gsbi5_info[0].irq = MSM_GPIO_TO_INT(shooter_TP_ATT_N_XC);
-
-		i2c_register_board_info(MSM_GSBI10_QUP_I2C_BUS_ID,
-			mpu3050_GSBI10_boardinfo_XC, ARRAY_SIZE(mpu3050_GSBI10_boardinfo_XC));
-	} else {
-		i2c_register_board_info(MSM_GSBI10_QUP_I2C_BUS_ID,
-			mpu3050_GSBI10_boardinfo, ARRAY_SIZE(mpu3050_GSBI10_boardinfo));
-	}
+	i2c_register_board_info(MSM_GSBI10_QUP_I2C_BUS_ID,
+		mpu3050_GSBI10_boardinfo, ARRAY_SIZE(mpu3050_GSBI10_boardinfo));
 
 	i2c_register_board_info(MSM_GSBI5_QUP_I2C_BUS_ID,
 		msm_i2c_gsbi5_info, ARRAY_SIZE(msm_i2c_gsbi5_info));
+
 #endif
 }
 
@@ -6531,15 +6640,10 @@ static void __init shooter_charm_init_early(void)
 static void __init shooter_fixup(struct machine_desc *desc, struct tag *tags,
 		char **cmdline, struct meminfo *mi)
 {
-	mem_size_mb = parse_tag_memsize((const struct tag *)tags);
-	printk(KERN_DEBUG "%s: mem_size_mb=%u\n", __func__, mem_size_mb);
-
 	engineerid = parse_tag_engineerid(tags);
 	mi->nr_banks = 1;
 	mi->bank[0].start = PHY_BASE_ADDR1;
 	mi->bank[0].size = SIZE_ADDR1;
-	if (mem_size_mb == 1024)
-		mi->bank[0].size += 0x10000000;
 }
 
 MACHINE_START(SHOOTER_CT, "shooter_ct")
