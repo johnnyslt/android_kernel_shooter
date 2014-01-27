@@ -63,22 +63,24 @@
 #define MSM_PMEM_ADSP_SIZE      0x1200000 /* 18MB */
 #define MSM_PMEM_AUDIO_SIZE     0x239000 /* 2.22MB  */
 
-#define MSM_ION_HEAP_NUM        5
+#define MSM_ION_HEAP_NUM        6
 
 // ION
-#define MSM_ION_MM_SIZE         0x2A00000
 #define MSM_ION_MM_FW_SIZE      0x200000
-#define MSM_ION_SF_SIZE         0x29A0000
+#define MSM_ION_MM_SIZE         0x3100000
+#define MSM_ION_MFC_SIZE        0x100000
+#define MSM_ION_SF_SIZE         0x2A00000
 #define MSM_ION_WB_SIZE         0x2FD000
 
 // Memory bases
-#define MSM_ION_SF_BASE         0x40400000
+#define MSM_PMEM_ADSP_BASE      0x40400000
+#define MSM_FB_BASE             0x41E00000
 #define MSM_ION_WB_BASE         0x45C00000
 #define MSM_PMEM_AUDIO_BASE     0x46400000
-#define MSM_ION_MM_FW_BASE      0x7C200000
-#define MSM_ION_MM_BASE         0x7C400000
-#define MSM_PMEM_ADSP_BASE      0x7EE00000
-
+#define MSM_ION_SF_BASE         0x49800000
+#define MSM_ION_MM_FW_BASE      0x7CC00000
+#define MSM_ION_MM_BASE         0x7CE00000
+#define MSM_ION_MFC_BASE        0x7FF00000
 
 #define MSM_SMI_BASE		0x38000000
 #define MSM_SMI_SIZE		0x4000000
@@ -89,7 +91,7 @@
 /* SMI PMEM Region, as the video core will use offset address */
 /* from the Firmware base */
 #define KERNEL_SMI_BASE		(MSM_SMI_BASE)
-#define KERNEL_SMI_SIZE		0x600000
+#define KERNEL_SMI_SIZE		0xC00000
 
 /* User space SMI PMEM Region for video core*/
 /* used for encoder, decoder input & output buffers  */
@@ -103,7 +105,7 @@
 #else
 #define PHY_BASE_ADDR1          0x48000000
 #endif
-#define SIZE_ADDR1              0x34200000
+#define SIZE_ADDR1              0x34C00000
 
 /* GPIO definition */
 
