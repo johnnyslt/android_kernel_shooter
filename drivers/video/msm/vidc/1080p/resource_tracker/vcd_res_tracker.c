@@ -796,10 +796,20 @@ int res_trk_get_mem_type(void)
 	int mem_type = -1;
 	switch (resource_context.res_mem_type) {
 	case DDL_FW_MEM:
+		if (res_trk_get_enable_ion())
+			mem_type = ION_HEAP(ION_MM_FIRMWARE_HEAP_ID);
+		else
+			mem_type = MEMTYPE_SMI_KERNEL;
+		break;
 	case DDL_MM_MEM:
-	case DDL_CMD_MEM:
 		if (res_trk_get_enable_ion())
 			mem_type = ION_HEAP(ION_CP_MM_HEAP_ID);
+		else
+			mem_type = MEMTYPE_SMI_KERNEL;
+		break;
+	case DDL_CMD_MEM:
+		if (res_trk_get_enable_ion())
+			mem_type = ION_HEAP(ION_CP_MFC_HEAP_ID);
 		else
 			mem_type = MEMTYPE_SMI_KERNEL;
 		break;
