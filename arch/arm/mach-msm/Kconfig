@@ -79,6 +79,7 @@ config ARCH_MSM8X60
 	select CPU_HAS_L2_PMU
 	select MSM_SPM_V1
 	select MSM_PM8X60 if PM
+        select ARM_HAS_SG_CHAIN
 
 config ARCH_MSM8X60_LTE
 	bool "MSM8X60_LTE"
