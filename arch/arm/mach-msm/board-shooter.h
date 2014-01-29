@@ -60,7 +60,7 @@
 #define MSM_FB_SIZE roundup((960 * ALIGN(540, 32) * 4 * 3) + 0x3F4800, 4096)
 
 // PMEM
-#define MSM_PMEM_ADSP_SIZE      0x1200000 /* 18MB */
+#define MSM_PMEM_ADSP_SIZE      0x1A00000 /* 27MB */
 #define MSM_PMEM_AUDIO_SIZE     0x239000 /* 2.22MB  */
 
 #define MSM_ION_HEAP_NUM        6
