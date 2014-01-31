@@ -603,8 +603,10 @@ irqreturn_t mdp4_isr(int irq, void *ptr)
 	}
 	if (isr & INTR_DMA_E_DONE) {
 		mdp4_stat.intr_dma_e++;
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 		if (panel & MDP4_PANEL_DTV)
 			mdp4_dmae_done_dtv();
+#endif
 	}
 #ifdef CONFIG_FB_MSM_OVERLAY
 	if (isr & INTR_OVERLAY0_DONE) {
