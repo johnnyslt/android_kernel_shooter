@@ -70,6 +70,7 @@
 #define MSM_ION_MM_SIZE         0x3100000
 #define MSM_ION_MFC_SIZE        0x100000
 #define MSM_ION_SF_SIZE         0x2A00000
+#define MSM_ION_SMI_SIZE        0x3400000
 #define MSM_ION_WB_SIZE         0x2FD000
 
 // Memory bases
@@ -78,6 +79,7 @@
 #define MSM_ION_WB_BASE         0x45C00000
 #define MSM_PMEM_AUDIO_BASE     0x46400000
 #define MSM_ION_SF_BASE         0x49800000
+#define MSM_ION_SMI_BASE        0x7CC00000
 #define MSM_ION_MM_FW_BASE      0x7CC00000
 #define MSM_ION_MM_BASE         0x7CE00000
 #define MSM_ION_MFC_BASE        0x7FF00000
