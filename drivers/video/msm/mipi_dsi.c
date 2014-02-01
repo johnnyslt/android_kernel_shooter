@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -34,15 +34,6 @@
 #include "mipi_dsi.h"
 #include "mdp.h"
 #include "mdp4.h"
-
-struct mdp4_overlay_perf {
-	u32 mdp_clk_rate;
-	u32 use_ov0_blt;
-	u32 use_ov1_blt;
-	u32 mdp_bw;
-};
-
-extern struct mdp4_overlay_perf perf_current;
 
 u32 dsi_irq;
 u32 esc_byte_ratio;
@@ -87,18 +78,11 @@ struct device dsi_dev;
 		down(&mfd->dma->mutex);
 
 	if (mfd->panel_info.type == MIPI_CMD_PANEL) {
-		mipi_dsi_prepare_clocks();
-		mipi_dsi_ahb_ctrl(1);
-		mipi_dsi_clk_enable();
+		mipi_dsi_clk_cfg(1);
 
-		/* make sure dsi_cmd_mdp is idle */
+		
 		mipi_dsi_cmd_mdp_busy();
 	}
-
-	/*
-	 * Desctiption: change to DSI_CMD_MODE since it needed to
-	 * tx DCS dsiplay off comamnd to panel
-	 */
 	mipi_dsi_op_mode_config(DSI_CMD_MODE);
 
 	if (mfd->panel_info.type == MIPI_CMD_PANEL) {
@@ -113,25 +97,12 @@ struct device dsi_dev;
 
 	ret = panel_next_off(pdev);
 
-#if defined(CONFIG_FB_MSM_MIPI_S6E8AA0_HD720_PANEL) || \
-	defined(CONFIG_FB_MSM_MIPI_S6E8AA0_WXGA_Q1_PANEL)
-
-	MIPI_OUTP(MIPI_DSI_BASE + 0xA8, 0x00000000); // for LCD-on when wakeup
+#ifdef CONFIG_MSM_BUS_SCALING
+	mdp_bus_scale_update_request(0, 0, 0, 0);
 #endif
 
-	spin_lock_bh(&dsi_clk_lock);
+	mipi_dsi_clk_turn_off();
 
-	mipi_dsi_clk_disable();
-
-	/* disbale dsi engine */
-	MIPI_OUTP(MIPI_DSI_BASE + 0x0000, 0);
-
-	mipi_dsi_phy_ctrl(0);
-
-	mipi_dsi_ahb_ctrl(0);
-	spin_unlock_bh(&dsi_clk_lock);
-
-	mipi_dsi_unprepare_clocks();
 	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save)
 		mipi_dsi_pdata->dsi_power_save(0);
 
@@ -148,7 +119,6 @@ struct device dsi_dev;
 static int mipi_dsi_on(struct platform_device *pdev)
 {
 	int ret = 0;
-	u32 clk_rate;
 	struct msm_fb_data_type *mfd;
 	struct fb_info *fbi;
 	struct fb_var_screeninfo *var;
@@ -165,28 +135,21 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	fbi = mfd->fbi;
 	var = &fbi->var;
 	pinfo = &mfd->panel_info;
+
+#ifdef CONFIG_MSM_ALT_DSI_ESCAPE_CLOCK
 	esc_byte_ratio = pinfo->mipi.esc_byte_ratio;
+#else
+	esc_byte_ratio = 2;
+#endif
 
 	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save)
 		mipi_dsi_pdata->dsi_power_save(1);
 
-	cont_splash_clk_ctrl(0);
-	mipi_dsi_prepare_clocks();
-
-	mipi_dsi_ahb_ctrl(1);
-
-	clk_rate = mfd->fbi->var.pixclock;
-	clk_rate = min(clk_rate, mfd->panel_info.clk_max);
-
-	mipi_dsi_phy_ctrl(1);
-
-	if (mdp_rev >= MDP_REV_42 && mipi_dsi_pdata)
+	if (mdp_rev == MDP_REV_42 && mipi_dsi_pdata)
 		target_type = mipi_dsi_pdata->target_type;
 
-	mipi_dsi_phy_init(0, &(mfd->panel_info), target_type);
-
-	mipi_dsi_clk_enable();
-
+	cont_splash_clk_ctrl(0);
+	mipi_dsi_clk_turn_on(&(mfd->panel_info), target_type);
 	MIPI_OUTP(MIPI_DSI_BASE + 0x114, 1);
 	MIPI_OUTP(MIPI_DSI_BASE + 0x114, 0);
 
@@ -216,7 +179,7 @@ static int mipi_dsi_on(struct platform_device *pdev)
 					vfp - 1) << 16 | (hspw + hbp +
 					width + dummy_xres + hfp - 1));
 		} else {
-			/* DSI_LAN_SWAP_CTRL */
+			
 			MIPI_OUTP(MIPI_DSI_BASE + 0x00ac, mipi->dlane_swap);
 
 			MIPI_OUTP(MIPI_DSI_BASE + 0x20,
@@ -232,7 +195,7 @@ static int mipi_dsi_on(struct platform_device *pdev)
 		MIPI_OUTP(MIPI_DSI_BASE + 0x30, 0);
 		MIPI_OUTP(MIPI_DSI_BASE + 0x34, (vspw << 16));
 
-	} else {		/* command mode */
+	} else {		
 		if (mipi->dst_format == DSI_CMD_DST_FORMAT_RGB888)
 			bpp = 3;
 		else if (mipi->dst_format == DSI_CMD_DST_FORMAT_RGB666)
@@ -240,16 +203,16 @@ static int mipi_dsi_on(struct platform_device *pdev)
 		else if (mipi->dst_format == DSI_CMD_DST_FORMAT_RGB565)
 			bpp = 2;
 		else
-			bpp = 3;	/* Default format set to RGB888 */
+			bpp = 3;	
 
 		ystride = width * bpp + 1;
 
-		/* DSI_COMMAND_MODE_MDP_STREAM_CTRL */
+		
 		data = (ystride << 16) | (mipi->vc << 8) | DTYPE_DCS_LWRITE;
 		MIPI_OUTP(MIPI_DSI_BASE + 0x5c, data);
 		MIPI_OUTP(MIPI_DSI_BASE + 0x54, data);
 
-		/* DSI_COMMAND_MODE_MDP_STREAM_TOTAL */
+		
 		data = height << 16 | width;
 		MIPI_OUTP(MIPI_DSI_BASE + 0x60, data);
 		MIPI_OUTP(MIPI_DSI_BASE + 0x58, data);
@@ -271,8 +234,7 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	else
 		down(&mfd->dma->mutex);
 
-	if (mfd->op_enable)
-		ret = panel_next_on(pdev);
+	ret = panel_next_on(pdev);
 
 	mipi_dsi_op_mode_config(mipi->mode);
 
@@ -321,10 +283,13 @@ static int mipi_dsi_on(struct platform_device *pdev)
 			}
 			mipi_dsi_set_tear_on(mfd);
 		}
-		mipi_dsi_clk_disable();
-		mipi_dsi_ahb_ctrl(0);
-		mipi_dsi_unprepare_clocks();
+		mipi_dsi_clk_cfg(0);
 	}
+
+
+#ifdef CONFIG_MSM_BUS_SCALING
+	mdp_bus_scale_update_request(2, 2, 2, 2);
+#endif
 
 	if (mdp_rev >= MDP_REV_41)
 		mutex_unlock(&mfd->dma->ov_mutex);
@@ -334,17 +299,6 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	pr_debug("%s-:\n", __func__);
 
 	return ret;
-}
-
-static int mipi_dsi_early_off(struct platform_device *pdev)
-{
-	return panel_next_early_off(pdev);
-}
-
-
-static int mipi_dsi_late_init(struct platform_device *pdev)
-{
-	return panel_next_late_init(pdev);
 }
 
 
@@ -401,13 +355,8 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 
 		disable_irq(dsi_irq);
 
-		if (mdp_rev >= MDP_REV_42 && mipi_dsi_pdata &&
+		if (mdp_rev == MDP_REV_42 && mipi_dsi_pdata &&
 			mipi_dsi_pdata->target_type == 1) {
-			/* Target type is 1 for device with (De)serializer
-			 * 0x4f00000 is the base for TV Encoder.
-			 * Unused Offset 0x1000 is used for
-			 * (de)serializer on emulation platform
-			 */
 			periph_base = ioremap(MMSS_SERDES_BASE_PHY, 0x100);
 
 			if (periph_base) {
@@ -473,14 +422,8 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 	if (!mdp_dev)
 		return -ENOMEM;
 
-	/*
-	 * link to the latest pdev
-	 */
 	mfd->pdev = mdp_dev;
 
-	/*
-	 * alloc panel device data
-	 */
 	if (platform_device_add_data
 	    (mdp_dev, pdev->dev.platform_data,
 	     sizeof(struct msm_fb_panel_data))) {
@@ -488,19 +431,11 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 		platform_device_put(mdp_dev);
 		return -ENOMEM;
 	}
-	/*
-	 * data chain
-	 */
 	pdata = mdp_dev->dev.platform_data;
 	pdata->on = mipi_dsi_on;
 	pdata->off = mipi_dsi_off;
-	pdata->late_init = mipi_dsi_late_init;
-	pdata->early_off = mipi_dsi_early_off;
 	pdata->next = pdev;
 
-	/*
-	 * get/set panel specific fb info
-	 */
 	mfd->panel_info = pdata->panel_info;
 	pinfo = &mfd->panel_info;
 
@@ -562,7 +497,7 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 		 || (mipi->dst_format == DSI_VIDEO_DST_FORMAT_RGB565))
 		bpp = 2;
 	else
-		bpp = 3;		/* Default format set to RGB888 */
+		bpp = 3;		
 
 	if (mfd->panel_info.type == MIPI_VIDEO_PANEL &&
 		!mfd->panel_info.clk_rate) {
@@ -586,43 +521,20 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 	if (rc)
 		goto mipi_dsi_probe_err;
 
-	if ((dsi_pclk_rate < 3300000) || (dsi_pclk_rate > 103300000))
+	if ((dsi_pclk_rate < 3300000) || (dsi_pclk_rate > 223000000)) {
+		pr_err("%s: Pixel clock (%d) not supported\n",
+			__func__, dsi_pclk_rate);
 		dsi_pclk_rate = 35000000;
+	}
 	mipi->dsi_pclk_rate = dsi_pclk_rate;
 
-	/*
-	 * set driver data
-	 */
 	platform_set_drvdata(mdp_dev, mfd);
 
-	/*
-	 * register in mdp driver
-	 */
 	rc = platform_device_add(mdp_dev);
 	if (rc)
 		goto mipi_dsi_probe_err;
 
 	pdev_list[pdev_list_cnt++] = pdev;
-
-#if 1 // Debug Information
-	printk(KERN_ERR "mipi_dsi_probe: H.Period=%d, width=%d, BPorch=%d, xrex=%d,FPorch=%d\n",
-			h_period,
-			(mfd->panel_info.lcdc.h_pulse_width),
-			(mfd->panel_info.lcdc.h_back_porch),
-			(mfd->panel_info.xres),
-			(mfd->panel_info.lcdc.h_front_porch)	);
-	printk(KERN_ERR "mipi_dsi_probe: V.Period=%d, width=%d, BPorch=%d, xrex=%d,FPorch=%d\n",
-			v_period,
-			(mfd->panel_info.lcdc.v_pulse_width),
-			(mfd->panel_info.lcdc.v_back_porch),
-			(mfd->panel_info.yres),
-			(mfd->panel_info.lcdc.v_front_porch)	);
-	printk(KERN_ERR "mipi_dsi_probe: mipi->frame_rate = %d\n", mipi->frame_rate );	
-	printk(KERN_ERR "mipi_dsi_probe: Lanes = %d\n", lanes );	
-	printk(KERN_ERR "mipi_dsi_probe: pll_divider_config.clk_rate = %u\n", pll_divider_config.clk_rate );
-	printk(KERN_ERR "mipi_dsi_probe: dsi_pclk_rate = %u\n", dsi_pclk_rate );
-	printk(KERN_ERR "mipi_dsi_probe: mipi->dsi_pclk_rate = %u\n", mipi->dsi_pclk_rate );
-#endif 
 
 return 0;
 
