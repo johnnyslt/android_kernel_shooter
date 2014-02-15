@@ -1501,6 +1501,7 @@ static void compatible_input_report(uint8_t report_both, struct input_dev *idev,
 		}
 		input_mt_sync(idev);
 	} else {
+  if  (scr_suspended == false) {
 		if (report_both == REPORT_BOTH_DATA) {
 			input_report_abs(idev, ABS_MT_AMPLITUDE, fdata->z << 16 | fdata->w);
 			input_report_abs(idev, ABS_MT_POSITION,
@@ -1512,19 +1513,22 @@ static void compatible_input_report(uint8_t report_both, struct input_dev *idev,
 		input_report_abs(idev, ABS_MT_POSITION_X, fdata->x);
 		input_report_abs(idev, ABS_MT_POSITION_Y, fdata->y);
 		input_mt_sync(idev);
+		}
 	}
 }
 
 static void htc_input_report(struct input_dev *idev,
 				struct atmel_finger_data *fdata, uint8_t press, uint8_t last)
 {
-	if (!press) {
+ if (scr_suspended == false) {
+   if (!press) {
 		input_report_abs(idev, ABS_MT_AMPLITUDE, 0);
 		input_report_abs(idev, ABS_MT_POSITION, BIT(31));
 	} else {
 		input_report_abs(idev, ABS_MT_AMPLITUDE, fdata->z << 16 | fdata->w);
 		input_report_abs(idev, ABS_MT_POSITION,
 			(last ? BIT(31) : 0) | fdata->x << 16 | fdata->y);
+		}
 	}
 }
 
