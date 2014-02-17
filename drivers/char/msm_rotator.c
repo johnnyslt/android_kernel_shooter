@@ -1795,12 +1795,6 @@ static void msm_rotator_set_perf_level(u32 wh, u32 is_rgb)
 		perf_level = 3;
 	else
 		perf_level = 4;
-
-#ifdef CONFIG_MSM_BUS_SCALING
-	msm_bus_scale_client_update_request(msm_rotator_dev->bus_client_handle,
-		perf_level);
-#endif
-
 }
 
 static int msm_rotator_start(unsigned long arg,
@@ -2411,13 +2405,6 @@ static int __devexit msm_rotator_remove(struct platform_device *plat_dev)
 #ifdef CONFIG_PM
 static int msm_rotator_suspend(struct platform_device *dev, pm_message_t state)
 {
-#if defined(CONFIG_ARCH_MSM8X60)
-    /* fixed that bottom current is high after rotator is started */
-#ifdef CONFIG_MSM_BUS_SCALING
-    msm_bus_scale_client_update_request(msm_rotator_dev->bus_client_handle, 0);
-#endif
-#endif
-
 	rot_wait_for_commit_queue(true);
 	mutex_lock(&msm_rotator_dev->imem_lock);
 	if (msm_rotator_dev->imem_clk_state == CLK_EN
