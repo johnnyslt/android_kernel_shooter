@@ -78,7 +78,11 @@
 #define MSM_FB_BASE             0x41E00000
 #define MSM_ION_WB_BASE         0x42800000
 #define MSM_PMEM_AUDIO_BASE     0x46400000
+#ifdef CONFIG_MACH_SHOOTER_CT
+#define MSM_ION_SF_BASE         (PHY_BASE_ADDR1+0x1800000)
+#else
 #define MSM_ION_SF_BASE         0x49800000
+#endif
 #define MSM_ION_SMI_BASE        0x7CA00000
 #define MSM_ION_MM_FW_BASE      0x7CA00000
 #define MSM_ION_MM_BASE         0x7CC00000
@@ -104,10 +108,11 @@
 
 #ifdef CONFIG_MACH_SHOOTER_CT
 #define PHY_BASE_ADDR1          0x48800000
+#define SIZE_ADDR1              0x34200000
 #else
 #define PHY_BASE_ADDR1          0x48000000
-#endif
 #define SIZE_ADDR1              0x34A00000
+#endif
 
 /* GPIO definition */
 
@@ -156,10 +161,10 @@
 /* TP */
 #define shooter_TP_I2C_SDA    (51)
 #define shooter_TP_I2C_SCL    (52)
-#define shooter_TP_ATT_N      (65)
 #ifdef CONFIG_MACH_SHOOTER_CT
-#define SHOOTER_TP_ATT_N      (57)
+#define shooter_TP_ATT_N      (57)
 #else
+#define shooter_TP_ATT_N      (65)
 #define shooter_TP_ATT_N_XC   (57)
 #endif
 
