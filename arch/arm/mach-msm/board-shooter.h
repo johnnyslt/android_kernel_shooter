@@ -290,10 +290,15 @@
 #define PM8901_IRQ_BASE				(PM8058_IRQ_BASE + \
 		NR_PMIC8058_IRQS)
 
+extern int panel_type;
+
 int __init shooter_init_mmc(void);
 void __init shooter_audio_init(void);
 int __init shooter_init_keypad(void);
 int __init shooter_wifi_init(void);
-int __init shooter_init_panel(struct resource *res, size_t size);
+void shooter_init_fb(void);
+void shooter_allocate_fb_region(void);
+void __init shooter_mdp_writeback(struct memtype_reserve* reserve_table);
+void __init msm_fb_add_devices(void);
 
 #endif /* __ARCH_ARM_MACH_MSM_BOARD_shooter_H */

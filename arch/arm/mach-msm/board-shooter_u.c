@@ -146,8 +146,6 @@
 static struct platform_device ion_dev;
 #endif
 
-int __init pyd_init_panel(struct resource *res, size_t size);
-
 enum {
 	GPIO_EXPANDER_IRQ_BASE  = PM8901_IRQ_BASE + NR_PMIC8901_IRQS,
 	GPIO_EXPANDER_GPIO_BASE = PM8901_GPIO_BASE + PM8901_MPPS,
@@ -2026,14 +2024,6 @@ static struct platform_device msm_batt_device = {
 };
 #endif
 
-static unsigned fb_size;
-static int __init fb_size_setup(char *p)
-{
-	fb_size = memparse(p, NULL);
-	return 0;
-}
-early_param("fb_size", fb_size_setup);
-
 #ifdef CONFIG_ANDROID_PMEM
 static unsigned pmem_adsp_size = MSM_PMEM_ADSP_SIZE;
 
@@ -2328,7 +2318,7 @@ static struct platform_device ion_dev = {
 
 static void __init msm8x60_allocate_memory_regions(void)
 {
-	unsigned long size;
+	shooter_allocate_fb_region();
 
 	persistent_ram_early_init(&ram_console_ram);
 }
@@ -3839,11 +3829,19 @@ static void __init reserve_ion_memory(void)
 }
 #endif
 
+static void __init reserve_mdp_memory(void)
+{
+	shooter_mdp_writeback(msm8x60_reserve_table);
+}
+
+static void __init reserve_mdp_memory(void);
+
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
 	size_pmem_devices();
 	reserve_pmem_memory();
 	reserve_ion_memory();
+	reserve_mdp_memory();
 }
 
 static int msm8x60_paddr_to_memtype(phys_addr_t paddr)
@@ -6600,7 +6598,7 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	platform_device_register(&msm_gsbi3_qup_spi_device);
 #endif
 
-	shooter_init_panel(msm_fb_resources, ARRAY_SIZE(msm_fb_resources));
+	shooter_init_fb();
 
 	fixup_i2c_configs();
 	register_i2c_devices();
