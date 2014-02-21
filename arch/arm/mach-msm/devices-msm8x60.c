@@ -1863,7 +1863,6 @@ struct msm_camera_platform_info vpe_info = {
 	.num_clks = ARRAY_SIZE(vpe_clk_info),
 };
 
-
 struct platform_device msm8x60_device_csic0 = {
 	.name           = "msm_csic",
 	.id             = 0,
@@ -1903,9 +1902,7 @@ struct platform_device msm8x60_device_vpe = {
 			.platform_data = &vpe_info,
 	},
 };
-
 #endif
-
 
 #define MIPI_DSI_HW_BASE	0x04700000
 #define ROTATOR_HW_BASE		0x04E00000
@@ -1928,7 +1925,7 @@ static struct resource msm_mipi_dsi_resources[] = {
 
 static struct platform_device msm_mipi_dsi_device = {
 	.name   = "mipi_dsi",
-	.id     = 0,
+	.id     = 1,
 	.num_resources  = ARRAY_SIZE(msm_mipi_dsi_resources),
 	.resource       = msm_mipi_dsi_resources,
 };
