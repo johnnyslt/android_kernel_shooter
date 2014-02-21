@@ -2054,15 +2054,6 @@ static int __init pmem_audio_size_setup(char *p)
 early_param("pmem_audio_size", pmem_audio_size_setup);
 #endif
 
-static struct resource msm_fb_resources[] = {
-	{
-		.flags  = IORESOURCE_DMA,
-	},
-	/* for overlay write back operation */
-	{
-		.flags  = IORESOURCE_DMA,
-	},
-};
 
 static struct platform_device shooter_3Dpanel_device = {
 	.name = "panel_3d",
@@ -2339,19 +2330,6 @@ static void __init msm8x60_allocate_memory_regions(void)
 {
 	unsigned long size;
 
-	size = MSM_FB_SIZE;
-  msm_fb_resources[0].start = MSM_FB_BASE;
-	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
-  pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for fb\n",
-    size, __va(MSM_FB_BASE), (unsigned long) MSM_FB_BASE);
-
-#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
-	size = MSM_OVERLAY_BLT_SIZE;
-	msm_fb_resources[1].start = MSM_OVERLAY_BLT_SIZE;
-	msm_fb_resources[1].end = msm_fb_resources[1].start + size - 1;
-	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for overlay\n",
-		size, __va(MSM_OVERLAY_BLT_BASE), (unsigned long) msm_fb_resources[1].start);
-#endif
 	persistent_ram_early_init(&ram_console_ram);
 }
 
