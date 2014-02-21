@@ -5045,6 +5045,7 @@ static struct mpu3050_platform_data mpu3050_data = {
 		.bus = EXT_SLAVE_BUS_SECONDARY,
 		.address = 0x30 >> 1,
 		.orientation = { -1, 0, 0, 0, 1, 0, 0, 0, -1 },
+
 	},
 
 	.compass = {
@@ -5052,7 +5053,8 @@ static struct mpu3050_platform_data mpu3050_data = {
 		.adapt_num = MSM_GSBI10_QUP_I2C_BUS_ID, /* The i2c bus to which the mpu device is connected */
 		.bus = EXT_SLAVE_BUS_PRIMARY,
 		.address = 0x1A >> 1,
-		.orientation = { 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+		.orientation = { -1, 0, 0, 0, 1, 0, 0, 0, -1 },
+
 	},
 };
 
