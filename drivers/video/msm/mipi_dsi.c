@@ -216,7 +216,7 @@ static int mipi_dsi_off(struct platform_device *pdev)
 	if (mfd->panel_info.type == MIPI_CMD_PANEL) {
 		mipi_dsi_clk_cfg(1);
 
-		
+
 		mipi_dsi_cmd_mdp_busy();
 	}
 	mipi_dsi_op_mode_config(DSI_CMD_MODE);
@@ -315,7 +315,7 @@ static int mipi_dsi_on(struct platform_device *pdev)
 					vfp - 1) << 16 | (hspw + hbp +
 					width + dummy_xres + hfp - 1));
 		} else {
-			
+
 			MIPI_OUTP(MIPI_DSI_BASE + 0x00ac, mipi->dlane_swap);
 
 			MIPI_OUTP(MIPI_DSI_BASE + 0x20,
@@ -343,12 +343,12 @@ static int mipi_dsi_on(struct platform_device *pdev)
 
 		ystride = width * bpp + 1;
 
-		
+
 		data = (ystride << 16) | (mipi->vc << 8) | DTYPE_DCS_LWRITE;
 		MIPI_OUTP(MIPI_DSI_BASE + 0x5c, data);
 		MIPI_OUTP(MIPI_DSI_BASE + 0x54, data);
 
-		
+
 		data = height << 16 | width;
 		MIPI_OUTP(MIPI_DSI_BASE + 0x60, data);
 		MIPI_OUTP(MIPI_DSI_BASE + 0x58, data);

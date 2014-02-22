@@ -16,6 +16,7 @@
 #define __ARCH_ARM_MACH_MSM_BOARD_shooter_H
 
 #include <mach/board.h>
+#include <mach/msm_memtypes.h>
 
 #define MSM_RAM_CONSOLE_BASE	MSM_HTC_RAM_CONSOLE_PHYS
 #define MSM_RAM_CONSOLE_SIZE	MSM_HTC_RAM_CONSOLE_SIZE
@@ -171,6 +172,7 @@
 /* LCD */
 #define GPIO_LCM_ID			50
 #define GPIO_LCM_RST_N			66
+#define GPIO_LCD_TE           (28)
 
 /* Audio */
 #define SHOOTER_AUD_CODEC_RST		(67)

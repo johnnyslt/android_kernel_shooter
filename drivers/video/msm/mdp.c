@@ -1936,7 +1936,7 @@ irqreturn_t mdp_isr(int irq, void *ptr)
 	mb();
 
 	mdp_is_in_isr = TRUE;
-	
+
 	mdp_interrupt = inp32(MDP_INTR_STATUS);
 	outp32(MDP_INTR_CLEAR, mdp_interrupt);
 
@@ -2270,7 +2270,7 @@ static int mdp_on(struct platform_device *pdev)
 
 	if (!(mfd->cont_splash_done)) {
 		if (mfd->panel.type == MIPI_VIDEO_PANEL)
-			mdp4_dsi_video_splash_done();
+			//mdp4_dsi_video_splash_done();
 
 		/* Clks are enabled in probe.
 		Disabling clocks now */

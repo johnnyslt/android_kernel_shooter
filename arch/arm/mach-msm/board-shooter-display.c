@@ -768,13 +768,13 @@ struct mdp_table_entry mdp_sharp_barrier_off[] = {
 	{0x90070, 0x17	  , 0x17},
 };
 
-int shooter_mdp_gamma(void)
+/*int shooter_mdp_gamma(void)
 {
 	PR_DISP_INFO("%s\n", __func__);
 	mdp4_dsi_color_enhancement(mdp_sharp_barrier_off, ARRAY_SIZE(mdp_sharp_barrier_off));
 
 	return 0;
-}
+}*/
 
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = GPIO_LCD_TE,
@@ -834,8 +834,8 @@ static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.splash_is_enabled = mipi_dsi_splash_is_enabled,
 };
 
-static struct dsi_buf panel_tx_buf;
-static struct dsi_buf panel_rx_buf;
+//static struct dsi_buf panel_tx_buf;
+//static struct dsi_buf panel_rx_buf;
 
 static char led_pwm1[] = {0x51, 0x0};
 static char sw_reset[2] = {0x01, 0x00};
@@ -845,7 +845,8 @@ static char display_off[2] = {0x28, 0x00};
 static char display_on[2] = {0x29, 0x00};
 static char enable_te[2] = {0x35, 0x00};
 static char test_reg[3] = {0x44, 0x02, 0xCF};
-static char test_reg_ruy_auo[3] = {0x44, 0x01, 0x68};
+static char test_reg_qhd[3] = {0x44, 0x01, 0x3f};/* DTYPE_DCS_LWRITE */ /* 479:1b7; 319:13f; 479:1df */
+//static char test_reg_ruy_auo[3] = {0x44, 0x01, 0x68};
 static char set_twolane[2] = {0xae, 0x03};
 static char rgb_888[2] = {0x3A, 0x77};
 static char novatek_f4[2] = {0xf4, 0x55};
@@ -908,6 +909,53 @@ static struct dsi_cmd_desc shr_sharp_cmd_on_cmds[] = {
 		sizeof(set_height), set_height},
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
 		sizeof(rgb_888), rgb_888},
+	{DTYPE_DCS_WRITE, 1, 0, 0, 120,
+		sizeof(exit_sleep), exit_sleep},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_f3), novatek_pwm_f3},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_00), novatek_pwm_00},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_21), novatek_pwm_21},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_22), novatek_pwm_22},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_7d), novatek_pwm_7d},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_7f), novatek_pwm_7f},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_f3), novatek_pwm_f3},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_cp), novatek_pwm_cp},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_cp2), novatek_pwm_cp2},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_pwm_cp3), novatek_pwm_cp3},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(enable_te), enable_te},
+	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
+		sizeof(test_reg), test_reg},
+	{DTYPE_MAX_PKTSIZE, 1, 0, 0, 0,
+		sizeof(max_pktsize), max_pktsize},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_f4), novatek_f4},
+	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
+		sizeof(novatek_8c), novatek_8c},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(novatek_ff), novatek_ff},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(set_twolane), set_twolane},
+	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
+		sizeof(set_width), set_width},
+{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
+		sizeof(set_height), set_height},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(rgb_888), rgb_888},
+	{DTYPE_DCS_WRITE1, 1, 0, 0, 0,
+		sizeof(bkl_enable_cmds), bkl_enable_cmds},
+        {DTYPE_DCS_WRITE, 1, 0, 0, 0,
+		sizeof(display_on), display_on},
+
 };
 
 static struct dsi_cmd_desc novatek_display_off_cmds[] = {
@@ -947,7 +995,7 @@ static int shooter_lcd_on(struct platform_device *pdev)
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
-			mipi_dsi_cmdlist_put(&cmdreq);
+//			mipi_dsi_cmdlist_put(&cmdreq);
 			break;
 		default:
 			PR_DISP_ERR("%s: panel_type is not supported!(%d)\n", __func__, panel_type);
@@ -964,7 +1012,7 @@ static int shooter_early_off(struct platform_device *pdev)
    return 0;
 }
 
-static int pyramid_lcd_off(struct platform_device *pdev)
+static int shooter_lcd_off(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
 
@@ -986,7 +1034,7 @@ static int pyramid_lcd_off(struct platform_device *pdev)
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
-			mipi_dsi_cmdlist_put(&cmdreq);
+//			mipi_dsi_cmdlist_put(&cmdreq);
 			break;
 	}
 
@@ -1002,6 +1050,9 @@ static int pyramid_lcd_off(struct platform_device *pdev)
 #define PWM_MIN				8
 #define PWM_DEFAULT			91
 #define PWM_MAX				232
+
+unsigned char shrink_br = BRI_SETTING_MAX;
+unsigned char last_br_2d = BRI_SETTING_MAX;
 
 static unsigned char shooter_shrink_pwm(int val)
 {
@@ -1019,10 +1070,10 @@ static unsigned char shooter_shrink_pwm(int val)
 	} else if (val > BRI_SETTING_MAX)
 		shrink_br = PWM_MAX;
 
-	if (atomic_read(&g_3D_mode) != BARRIER_OFF && shrink_br != 0)
+/*	if (atomic_read(&g_3D_mode) != BARRIER_OFF && shrink_br != 0)
 		shrink_br = 255;
 	else
-		last_br_2d = val;
+		last_br_2d = val;*/
 
 	//PR_DISP_DEBUG("brightness orig=%d, transformed=%d\n", val, shrink_br);
 
@@ -1044,10 +1095,10 @@ static void shooter_set_backlight(struct msm_fb_data_type *mfd)
 	cmdreq.rlen = 0;
 	cmdreq.cb = NULL;
 
-	mipi_dsi_cmdlist_put(&cmdreq);
+//	mipi_dsi_cmdlist_put(&cmdreq);
 }
 
-static int __devinit pyramid_lcd_probe(struct platform_device *pdev)
+static int __devinit shooter_lcd_probe(struct platform_device *pdev)
 {
 	msm_fb_add_device(pdev);
 
@@ -1133,12 +1184,10 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.lcdc.v_back_porch = 16;
 	pinfo.lcdc.v_front_porch = 16;
 	pinfo.lcdc.v_pulse_width = 4;
-
-        pinfo.lcd.primary_vsync_init = pinfo.yres;
-        pinfo.lcd.primary_rdptr_irq = 0;
-        pinfo.lcd.primary_start_pos = pinfo.yres +
-               pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
-
+  pinfo.lcd.primary_vsync_init = pinfo.yres;
+  pinfo.lcd.primary_rdptr_irq = 0;
+  pinfo.lcd.primary_start_pos = pinfo.yres +
+  pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
 	pinfo.lcdc.border_clr = 0;
 	pinfo.lcdc.underflow_clr = 0xff;
 	pinfo.lcdc.hsync_skew = 0;
@@ -1194,12 +1243,12 @@ void __init shooter_init_fb(void)
 
 static int __init shooter_panel_init(void)
 {
-	mipi_dsi_buf_alloc(&panel_tx_buf, DSI_BUF_SIZE);
-	mipi_dsi_buf_alloc(&panel_rx_buf, DSI_BUF_SIZE);
+//	mipi_dsi_buf_alloc(&panel_tx_buf, DSI_BUF_SIZE);
+//	mipi_dsi_buf_alloc(&panel_rx_buf, DSI_BUF_SIZE);
 
 	switch (panel_type) {
-		case PANEL_ID_PYD_SHARP_NT:
-			PR_DISP_INFO("%s: panel ID = PANEL_ID_PYD_SHARP_NT\n", __func__);
+		case PANEL_ID_SHR_SHARP_NT:
+			PR_DISP_INFO("%s: panel ID = PANEL_ID_SHR_SHARP_NT\n", __func__);
 			mipi_cmd_novatek_blue_qhd_pt_init();
 			break;
 		default:
