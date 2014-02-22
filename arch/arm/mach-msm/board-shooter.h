@@ -23,40 +23,6 @@
 
 /* Memory map */
 
-#if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
-		defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE) || \
-		defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
-		defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
-#define QCE_SIZE		0x10000
-#define QCE_0_BASE		0x18500000
-#endif
-
-#ifdef CONFIG_FB_MSM_LCDC_DSUB
-/* VGA = 1440 x 900 x 4(bpp) x 2(pages)
-   prim = 1024 x 600 x 4(bpp) x 2(pages)
-   This is the difference. */
-#define MSM_FB_DSUB_PMEM_ADDER (0x9E3400-0x4B0000)
-#else
-#define MSM_FB_DSUB_PMEM_ADDER (0)
-#endif
-
-#ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
-/* prim = 960 x 540 x 4(bpp) x 3(pages) */
-#define MSM_FB_PRIM_BUF_SIZE \
-    (roundup((960 * 540 * 4), 4096) * 3) /* 4 bpp x 3 pages */
-#else
-/* prim = 960 x 540 x 4(bpp) x 2(pages) */
-#define MSM_FB_PRIM_BUF_SIZE \
-    (roundup((960 * 540 * 4), 4096) * 2) /* 4 bpp x 2 pages */
-#endif
-
-#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
-/* width x height x 3 bpp x 2 frame buffer */
-#define MSM_FB_WRITEBACK_SIZE roundup(960 * ALIGN(540, 32) * 3 * 2, 4096)
-#else
-#define MSM_FB_WRITEBACK_SIZE 0
-#endif
-
 /* Note: must be a multiple of 4096 */
 #define MSM_FB_SIZE roundup((960 * ALIGN(540, 32) * 4 * 3) + 0x3F4800, 4096)
 

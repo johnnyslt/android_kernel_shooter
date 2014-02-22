@@ -519,6 +519,9 @@ static struct platform_device smsc911x_device = {
 		defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
 		defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
 
+#define QCE_SIZE		0x10000
+#define QCE_0_BASE		0x18500000
+
 #define QCE_HW_KEY_SUPPORT	0
 #define QCE_SHA_HMAC_SUPPORT	0
 #define QCE_SHARE_CE_RESOURCE	2
@@ -3474,7 +3477,6 @@ static struct platform_device pm8058_leds = {
 };
 
 #ifdef CONFIG_FB_MSM_HDMI_MHL
-static int pm8901_mpp_init(void);
 static struct regulator *reg_8901_l0;
 static struct regulator *reg_8058_l19;
 static struct regulator *reg_8901_l3;
@@ -3602,7 +3604,6 @@ static int mhl_sii9234_power(int on)
 		break;
 	case 1:
 		mhl_sii9234_all_power(true);
-		pm8901_mpp_init();
 		config_gpio_table(mhl_gpio_table, ARRAY_SIZE(mhl_gpio_table));
 		break;
 	default:
@@ -3834,7 +3835,7 @@ static void __init reserve_mdp_memory(void)
 	shooter_mdp_writeback(msm8x60_reserve_table);
 }
 
-static void __init reserve_mdp_memory(void);
+//static void __init reserve_mdp_memory(void);
 
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
@@ -4786,40 +4787,6 @@ static struct spi_board_info msm_spi_board_info[] __initdata = {
 
 #define PM8901_GPIO_INT           91
 
-#ifdef CONFIG_FB_MSM_HDMI_MHL
-static int pm8901_mpp_init(void)
-{
-    int rc;
-    pr_err("%s\n", __func__);
-
-    rc = pm8901_mpp_config(0, PM_MPP_TYPE_D_BI_DIR,
-		PM8901_MPP_DIG_LEVEL_MSMIO,
-		PM_MPP_BI_PULLUP_10KOHM);
-	if (rc)
-		pr_err("%s: pm8901_mpp_config failed with %d\n", __func__, rc);
-
-	rc = pm8901_mpp_config(1, PM_MPP_TYPE_D_BI_DIR,
-		PM8901_MPP_DIG_LEVEL_L5,
-		PM_MPP_BI_PULLUP_10KOHM);
-	if (rc)
-		pr_err("%s: pm8901_mpp_config failed with %d\n", __func__, rc);
-
-	rc = pm8901_mpp_config(2, PM_MPP_TYPE_D_BI_DIR,
-		PM8901_MPP_DIG_LEVEL_MSMIO,
-		PM_MPP_BI_PULLUP_10KOHM);
-
-	if (rc)
-		pr_err("%s: pm8901_mpp_config failed with %d\n", __func__, rc);
-
-	rc = pm8901_mpp_config(3, PM_MPP_TYPE_D_BI_DIR,
-		PM8901_MPP_DIG_LEVEL_L5,
-		PM_MPP_BI_PULLUP_10KOHM);
-
-	if (rc)
-		pr_err("%s: pm8901_mpp_config failed with %d\n", __func__, rc);
-	return rc;
-}
-#endif
 
 static struct pm8901_gpio_platform_data pm8901_mpp_data = {
 	.gpio_base	= PM8901_GPIO_PM_TO_SYS(0),

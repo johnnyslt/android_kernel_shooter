@@ -511,7 +511,6 @@ enum mipi_dsi_3d_ctrl {
 	FPGA_SPI_INTF,
 };
 
-#if defined(CONFIG_FB_MSM8960) || (!defined(CONFIG_ARCH_MSM8X60) && !defined(CONFIG_ARCH_MSM7X27A))
 /* DSI PHY configuration */
 struct mipi_dsi_phy_ctrl {
 	uint32_t regulator[5];
@@ -520,7 +519,6 @@ struct mipi_dsi_phy_ctrl {
 	uint32_t strength[4];
 	uint32_t pll[21];
 };
-#endif
 
 struct mipi_dsi_panel_platform_data {
 	int fpga_ctrl_mode;
@@ -586,7 +584,8 @@ struct msm_vidc_platform_data {
 	u32 enable_ion;
 	int disable_dmx;
 	int disable_fullhd;
-        u32 cp_enabled;
+  u32 cp_enabled;
+  u32 secure_wb_heap;
 #ifdef CONFIG_MSM_BUS_SCALING
 	struct msm_bus_scale_pdata *vidc_bus_client_pdata;
 #endif

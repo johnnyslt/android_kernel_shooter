@@ -1201,8 +1201,6 @@ static u32 vid_dec_start_stop(struct video_client_ctx *client_ctx, u32 start)
 				return false;
 			}
 		}
-
-		client_ctx->stop_called = false;
 	} else {
 		DBG("%s(): Calling vcd_stop()", __func__);
 		mutex_lock(&vid_dec_device_p->lock);
@@ -1493,8 +1491,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_SET_PICRES:
 	{
 		struct vdec_picsize video_resoultion;
-		memset((void *)&video_resoultion, 0,
-			sizeof(struct vdec_picsize));
 		DBG("VDEC_IOCTL_SET_PICRES\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1510,8 +1506,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_GET_PICRES:
 	{
 		struct vdec_picsize video_resoultion;
-		memset((void *)&video_resoultion, 0,
-			sizeof(struct vdec_picsize));
 		DBG("VDEC_IOCTL_GET_PICRES\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1535,10 +1529,6 @@ static long vid_dec_ioctl(struct file *file,
 		struct vdec_allocatorproperty vdec_buf_req;
 		struct vcd_buffer_requirement buffer_req;
 		DBG("VDEC_IOCTL_SET_BUFFER_REQ\n");
-		memset((void *)&vdec_buf_req, 0,
-			sizeof(struct vdec_allocatorproperty));
-		memset((void *)&buffer_req, 0,
-			sizeof(struct vcd_buffer_requirement));
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
 
@@ -1575,8 +1565,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_GET_BUFFER_REQ:
 	{
 		struct vdec_allocatorproperty vdec_buf_req;
-		memset((void *)&vdec_buf_req, 0,
-			sizeof(struct vdec_allocatorproperty));
 		DBG("VDEC_IOCTL_GET_BUFFER_REQ\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1597,8 +1585,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_SET_BUFFER:
 	{
 		struct vdec_setbuffer_cmd setbuffer;
-		memset((void *)&setbuffer, 0,
-			sizeof(struct vdec_setbuffer_cmd));
 		DBG("VDEC_IOCTL_SET_BUFFER\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1613,8 +1599,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_FREE_BUFFER:
 	{
 		struct vdec_setbuffer_cmd setbuffer;
-		memset((void *)&setbuffer, 0,
-			sizeof(struct vdec_setbuffer_cmd));
 		DBG("VDEC_IOCTL_FREE_BUFFER\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1663,8 +1647,6 @@ static long vid_dec_ioctl(struct file *file,
 		struct vdec_input_frameinfo input_frame_info;
 		u8 *desc_buf = NULL;
 		u32 desc_size = 0;
-		memset((void *)&input_frame_info, 0,
-			sizeof(struct vdec_input_frameinfo));
 		DBG("VDEC_IOCTL_DECODE_FRAME\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1700,8 +1682,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_FILL_OUTPUT_BUFFER:
 	{
 		struct vdec_fillbuffer_cmd fill_buffer_cmd;
-		memset((void *)&fill_buffer_cmd, 0,
-			sizeof(struct vdec_fillbuffer_cmd));
 		DBG("VDEC_IOCTL_FILL_OUTPUT_BUFFER\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1731,8 +1711,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_GET_NEXT_MSG:
 	{
 		struct vdec_msginfo vdec_msg_info;
-		memset((void *)&vdec_msg_info, 0,
-			sizeof(struct vdec_msginfo));
 		DBG("VDEC_IOCTL_GET_NEXT_MSG\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1756,10 +1734,6 @@ static long vid_dec_ioctl(struct file *file,
 		struct vdec_seqheader seq_header;
 		struct vcd_sequence_hdr vcd_seq_hdr;
 		unsigned long ionflag;
-		memset((void *)&seq_header, 0,
-			sizeof(struct vdec_seqheader));
-		memset((void *)&vcd_seq_hdr, 0,
-			sizeof(struct vcd_sequence_hdr));
 		DBG("VDEC_IOCTL_SET_SEQUENCE_HEADER\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg))) {
 			ERR("Copy from user vdec_msg failed\n");
@@ -1867,7 +1841,7 @@ static long vid_dec_ioctl(struct file *file,
 	}
 	case VDEC_IOCTL_GET_INTERLACE_FORMAT:
 	{
-		u32 progressive_only = 0, interlace_format = 0;
+		u32 progressive_only, interlace_format;
 		DBG("VDEC_IOCTL_GET_INTERLACE_FORMAT\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1887,7 +1861,7 @@ static long vid_dec_ioctl(struct file *file,
 
 	case VDEC_IOCTL_GET_DISABLE_DMX_SUPPORT:
 	{
-		u32 disable_dmx = 0;
+		u32 disable_dmx;
 		DBG("VDEC_IOCTL_GET_DISABLE_DMX_SUPPORT\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1903,7 +1877,7 @@ static long vid_dec_ioctl(struct file *file,
 	}
 	case VDEC_IOCTL_GET_DISABLE_DMX:
 	{
-		u32 disable_dmx = 0;
+		u32 disable_dmx;
 		DBG("VDEC_IOCTL_GET_DISABLE_DMX\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1928,7 +1902,7 @@ static long vid_dec_ioctl(struct file *file,
 	}
 	case VDEC_IOCTL_SET_PICTURE_ORDER:
 	{
-		u32 picture_order = 0;
+		u32 picture_order;
 		DBG("VDEC_IOCTL_SET_PICTURE_ORDER\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1943,8 +1917,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_SET_FRAME_RATE:
 	{
 		struct vdec_framerate frame_rate;
-		memset((void *)&frame_rate, 0,
-			sizeof(struct vdec_framerate));
 		DBG("VDEC_IOCTL_SET_FRAME_RATE\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1958,7 +1930,7 @@ static long vid_dec_ioctl(struct file *file,
 	}
 	case VDEC_IOCTL_SET_EXTRADATA:
 	{
-		u32 extradata_flag = 0;
+		u32 extradata_flag;
 		DBG("VDEC_IOCTL_SET_EXTRADATA\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1973,8 +1945,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_SET_H264_MV_BUFFER:
 	{
 		struct vdec_h264_mv mv_data;
-		memset((void *)&mv_data, 0,
-			sizeof(struct vdec_h264_mv));
 		DBG("VDEC_IOCTL_SET_H264_MV_BUFFER\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;
@@ -1998,8 +1968,6 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_GET_MV_BUFFER_SIZE:
 	{
 		struct vdec_mv_buff_size mv_buff;
-		memset((void *)&mv_buff, 0,
-			sizeof(struct vdec_mv_buff_size));
 		DBG("VDEC_IOCTL_GET_MV_BUFFER_SIZE\n");
 		if (copy_from_user(&vdec_msg, arg, sizeof(vdec_msg)))
 			return -EFAULT;

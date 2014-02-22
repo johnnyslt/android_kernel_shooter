@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -192,7 +193,7 @@ void mipi_dsi_clk_turn_off()
 
 	mipi_dsi_clk_disable();
 
-
+	
 	MIPI_OUTP(MIPI_DSI_BASE + 0x0000, 0);
 
 	mipi_dsi_phy_ctrl(0);
@@ -323,7 +324,7 @@ char *mipi_dsi_buf_init(struct dsi_buf *dp)
 
 	dp->data = dp->start;
 	off = (int)dp->data;
-
+	
 	off &= 0x07;
 	if (off)
 		off = 8 - off;
@@ -360,7 +361,7 @@ static int mipi_dsi_generic_lwrite(struct dsi_buf *dp, struct dsi_cmd_desc *cm)
 
 	bp = mipi_dsi_buf_reserve_hdr(dp, DSI_HOST_HDR_SIZE);
 
-
+	
 	if (cm->payload) {
 		len = cm->dlen;
 		len += 3;
@@ -368,14 +369,14 @@ static int mipi_dsi_generic_lwrite(struct dsi_buf *dp, struct dsi_cmd_desc *cm)
 		for (i = 0; i < cm->dlen; i++)
 			*bp++ = cm->payload[i];
 
-
+		
 		for (; i < len; i++)
 			*bp++ = 0xff;
 
 		dp->len += len;
 	}
 
-
+	
 	hp = dp->hdr;
 	*hp = 0;
 	*hp = DSI_HDR_WC(cm->dlen);
@@ -482,14 +483,14 @@ static int mipi_dsi_dcs_lwrite(struct dsi_buf *dp, struct dsi_cmd_desc *cm)
 		for (i = 0; i < cm->dlen; i++)
 			*bp++ = cm->payload[i];
 
-
+		
 		for (; i < len; i++)
 			*bp++ = 0xff;
 
 		dp->len += len;
 	}
 
-
+	
 	hp = dp->hdr;
 	*hp = 0;
 	*hp = DSI_HDR_WC(cm->dlen);
@@ -780,7 +781,7 @@ int mipi_dsi_cmd_dma_add(struct dsi_buf *dp, struct dsi_cmd_desc *cm)
 
 static int mipi_dsi_short_read1_resp(struct dsi_buf *rp)
 {
-
+	
 	rp->data++;
 	rp->len = 1;
 	return rp->len;
@@ -788,7 +789,7 @@ static int mipi_dsi_short_read1_resp(struct dsi_buf *rp)
 
 static int mipi_dsi_short_read2_resp(struct dsi_buf *rp)
 {
-
+	
 	rp->data++;
 	rp->len = 2;
 	return rp->len;
@@ -801,10 +802,10 @@ static int mipi_dsi_long_read_resp(struct dsi_buf *rp)
 	len = rp->data[2];
 	len <<= 8;
 	len |= rp->data[1];
-
+	
 	rp->data += 4;
 	rp->len -= 4;
-
+	
 	rp->len -= 2;
 	return len;
 }
@@ -860,7 +861,7 @@ void mipi_dsi_host_init(struct mipi_panel_info *pinfo)
 		data |= (pinfo->dst_format & 0x0f);	
 		MIPI_OUTP(MIPI_DSI_BASE + 0x003c, data);
 
-
+		
 		data = pinfo->wr_mem_continue & 0x0ff;
 		data <<= 8;
 		data |= (pinfo->wr_mem_start & 0x0ff);
@@ -887,8 +888,8 @@ void mipi_dsi_host_init(struct mipi_panel_info *pinfo)
 	if (pinfo->data_lane0)
 		dsi_ctrl |= BIT(4);
 
-
-
+	
+	
 	MIPI_OUTP(MIPI_DSI_BASE + 0x38, 0x14000000);
 
 	data = 0;
@@ -899,10 +900,10 @@ void mipi_dsi_host_init(struct mipi_panel_info *pinfo)
 	data |= (pinfo->stream & 0x01) << 8;
 	MIPI_OUTP(MIPI_DSI_BASE + 0x0080, data); 
 
-
+	
 	MIPI_OUTP(MIPI_DSI_BASE + 0x00ac, pinfo->dlane_swap);
 
-
+	
 	data = pinfo->t_clk_post & 0x3f;	
 	data <<= 8;
 	data |= pinfo->t_clk_pre & 0x3f;	
@@ -916,13 +917,13 @@ void mipi_dsi_host_init(struct mipi_panel_info *pinfo)
 	MIPI_OUTP(MIPI_DSI_BASE + 0x00c8, data); 
 
 
-
+	
 	MIPI_OUTP(MIPI_DSI_BASE + 0x0108, 0x13ff3fe0); 
 
 	intr_ctrl |= DSI_INTR_ERROR_MASK;
 	MIPI_OUTP(MIPI_DSI_BASE + 0x010c, intr_ctrl); 
 
-
+	
 	if (mdp_rev >= MDP_REV_41)
 		MIPI_OUTP(MIPI_DSI_BASE + 0x118, 0x23f); 
 	else
@@ -1165,7 +1166,7 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 	char cmd;
 
 	if (mfd->panel_info.mipi.no_max_pkt_size) {
-
+		
 		rlen += 3;
 		rlen &= ~0x03;
 	}
@@ -1193,7 +1194,7 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 	}
 
 	if (!mfd->panel_info.mipi.no_max_pkt_size) {
-
+		
 		pkt_size = len;
 		max_pktsize[0] = pkt_size;
 		mipi_dsi_enable_irq(DSI_CMD_TERM);
@@ -1206,7 +1207,7 @@ int mipi_dsi_cmds_rx(struct msm_fb_data_type *mfd,
 	mipi_dsi_buf_init(tp);
 	mipi_dsi_cmd_dma_add(tp, cmds);
 
-
+	
 	mipi_dsi_cmd_dma_tx(tp);
 
 	mipi_dsi_disable_irq(DSI_CMD_TERM);
@@ -1255,7 +1256,7 @@ int mipi_dsi_cmds_rx_new(struct dsi_buf *tp, struct dsi_buf *rp,
 	char cmd;
 
 	if (req->flags & CMD_REQ_NO_MAX_PKT_SIZE) {
-
+		
 		rlen += 3;
 		rlen &= ~0x03;
 	}
@@ -1280,7 +1281,7 @@ int mipi_dsi_cmds_rx_new(struct dsi_buf *tp, struct dsi_buf *rp,
 	if (!(req->flags & CMD_REQ_NO_MAX_PKT_SIZE)) {
 
 
-
+		
 		pkt_size = len;
 		max_pktsize[0] = pkt_size;
 		mipi_dsi_enable_irq(DSI_CMD_TERM);
@@ -1293,7 +1294,7 @@ int mipi_dsi_cmds_rx_new(struct dsi_buf *tp, struct dsi_buf *rp,
 	mipi_dsi_buf_init(tp);
 	mipi_dsi_cmd_dma_add(tp, cmds);
 
-
+	
 	mipi_dsi_cmd_dma_tx(tp);
 
 	mipi_dsi_disable_irq(DSI_CMD_TERM);
@@ -1440,7 +1441,7 @@ void mipi_dsi_cmd_mdp_busy(void)
 	spin_unlock_irqrestore(&dsi_mdp_lock, flags);
 
 	if (need_wait) {
-
+		
 		pr_debug("%s: pending pid=%d\n",
 				__func__, current->pid);
 		timeoutResult = wait_for_completion_timeout(&dsi_mdp_comp, HZ/10);
@@ -1514,7 +1515,7 @@ void mipi_dsi_cmdlist_commit(int from_mdp)
 	mutex_lock(&cmd_mutex);
 	req = mipi_dsi_cmdlist_get();
 
-
+	
 	mipi_dsi_cmd_mdp_busy();
 
 	if (req == NULL)
@@ -1532,9 +1533,9 @@ void mipi_dsi_cmdlist_commit(int from_mdp)
 	if (dsi_ctrl & 0x02) {
 		mipi_dsi_video_wait_to_mdp_busy();
 	} else {
-
+		
 		if (!from_mdp) { 
-
+			
 			mipi_dsi_cmd_mdp_busy();
 		}
 	}
@@ -1566,7 +1567,7 @@ int mipi_dsi_cmdlist_put(struct dcs_cmd_req *cmdreq)
 	cmdlist.put %= CMD_REQ_MAX;
 	cmdlist.tot++;
 	if (cmdlist.put == cmdlist.get) {
-
+		
 		pr_debug("%s: DROP, tot=%d put=%d get=%d\n", __func__,
 			cmdlist.tot, cmdlist.put, cmdlist.get);
 		cmdlist.get++;
@@ -1656,7 +1657,7 @@ void mipi_dsi_status(void)
 
 void mipi_dsi_error(void)
 {
-
+	
 	mipi_dsi_ack_err_status();	
 	mipi_dsi_timeout_status();	
 	mipi_dsi_fifo_status();		
@@ -1672,7 +1673,7 @@ irqreturn_t mipi_dsi_isr(int irq, void *ptr)
 	isr = MIPI_INP(MIPI_DSI_BASE + 0x010c);
 	MIPI_OUTP(MIPI_DSI_BASE + 0x010c, isr);
 
-
+	
 	status = MIPI_INP(MIPI_DSI_BASE + 0x0004);
 
 	pr_debug("%s: isr=%x\n", __func__, (int)isr);

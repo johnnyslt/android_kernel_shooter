@@ -3621,13 +3621,14 @@ int mdp4_overlay_set(struct fb_info *info, struct mdp_overlay *req)
 
 	if(DMB_Qseed_change == 2 && which_pipe_for_DMB > 0)
 	{
-
+		
 		printk("### call mdp4_vg_qseed_init_VideoPlay\n");
 		mdp4_vg_qseed_init_VideoPlay(which_pipe_for_DMB-1);
 		DMB_Qseed_change = 0;
 		which_pipe_for_DMB = 0;
 	}
-#endif	/* return id back to user */
+#endif	
+	/* return id back to user */
 	req->id = pipe->pipe_ndx;	/* pipe_ndx start from 1 */
 	pipe->req_data = *req;		/* keep original req */
 

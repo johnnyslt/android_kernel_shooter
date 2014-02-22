@@ -45,6 +45,7 @@
 
 #define HDMI_PANEL_NAME "hdmi_msm"
 
+
 static int msm_fb_detect_panel(const char *name)
 {
 	if (!strncmp(name, HDMI_PANEL_NAME,
@@ -834,8 +835,8 @@ static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.splash_is_enabled = mipi_dsi_splash_is_enabled,
 };
 
-//static struct dsi_buf panel_tx_buf;
-//static struct dsi_buf panel_rx_buf;
+static struct dsi_buf panel_tx_buf;
+static struct dsi_buf panel_rx_buf;
 
 static char led_pwm1[] = {0x51, 0x0};
 static char sw_reset[2] = {0x01, 0x00};
@@ -986,8 +987,7 @@ static int shooter_lcd_on(struct platform_device *pdev)
 	if (mipi_lcd_on)
 		return 0;
 
-	switch (panel_type) {
-		case PANEL_ID_SHR_SHARP_NT:
+  if (panel_type == PANEL_ID_SHR_SHARP_NT) {
 			printk(KERN_INFO "shooter_lcd_on PANEL_ID_SHR_SHARP_NT\n");
 			cmdreq.cmds = shr_sharp_cmd_on_cmds;
 			cmdreq.cmds_cnt = ARRAY_SIZE(shr_sharp_cmd_on_cmds);
@@ -995,11 +995,9 @@ static int shooter_lcd_on(struct platform_device *pdev)
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
-//			mipi_dsi_cmdlist_put(&cmdreq);
-			break;
-		default:
+			mipi_dsi_cmdlist_put(&cmdreq);
+		}else{
 			PR_DISP_ERR("%s: panel_type is not supported!(%d)\n", __func__, panel_type);
-			break;
 	}
 
 	mipi_lcd_on = 1;
@@ -1026,16 +1024,14 @@ static int shooter_lcd_off(struct platform_device *pdev)
 	if (!mipi_lcd_on)
 		return 0;
 
-	switch (panel_type) {
-		case PANEL_ID_SHR_SHARP_NT:
+  if (panel_type == PANEL_ID_SHR_SHARP_NT) {
 			cmdreq.cmds = novatek_display_off_cmds;
 			cmdreq.cmds_cnt = ARRAY_SIZE(novatek_display_off_cmds);
 			cmdreq.flags = CMD_REQ_COMMIT;
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 
-//			mipi_dsi_cmdlist_put(&cmdreq);
-			break;
+			mipi_dsi_cmdlist_put(&cmdreq);
 	}
 
 	mipi_lcd_on = 0;
@@ -1051,8 +1047,16 @@ static int shooter_lcd_off(struct platform_device *pdev)
 #define PWM_DEFAULT			91
 #define PWM_MAX				232
 
+enum MODE_3D {
+	BARRIER_OFF       = 0,
+	BARRIER_LANDSCAPE = 1,
+	BARRIER_PORTRAIT  = 2,
+	BARRIER_END
+};
+
 unsigned char shrink_br = BRI_SETTING_MAX;
 unsigned char last_br_2d = BRI_SETTING_MAX;
+atomic_t g_3D_mode = ATOMIC_INIT(BARRIER_OFF);
 
 static unsigned char shooter_shrink_pwm(int val)
 {
@@ -1070,10 +1074,10 @@ static unsigned char shooter_shrink_pwm(int val)
 	} else if (val > BRI_SETTING_MAX)
 		shrink_br = PWM_MAX;
 
-/*	if (atomic_read(&g_3D_mode) != BARRIER_OFF && shrink_br != 0)
+	if (atomic_read(&g_3D_mode) != BARRIER_OFF && shrink_br != 0)
 		shrink_br = 255;
 	else
-		last_br_2d = val;*/
+		last_br_2d = val;
 
 	//PR_DISP_DEBUG("brightness orig=%d, transformed=%d\n", val, shrink_br);
 
@@ -1095,7 +1099,8 @@ static void shooter_set_backlight(struct msm_fb_data_type *mfd)
 	cmdreq.rlen = 0;
 	cmdreq.cb = NULL;
 
-//	mipi_dsi_cmdlist_put(&cmdreq);
+	mipi_dsi_cmdlist_put(&cmdreq);
+  return;
 }
 
 static int __devinit shooter_lcd_probe(struct platform_device *pdev)
@@ -1108,7 +1113,7 @@ static int __devinit shooter_lcd_probe(struct platform_device *pdev)
 static struct platform_driver this_driver = {
 	.probe  = shooter_lcd_probe,
 	.driver = {
-		.name   = "mipi_novatek",
+	.name   = "mipi_novatek",
 	},
 };
 
@@ -1184,15 +1189,16 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.lcdc.v_back_porch = 16;
 	pinfo.lcdc.v_front_porch = 16;
 	pinfo.lcdc.v_pulse_width = 4;
-  pinfo.lcd.primary_vsync_init = pinfo.yres;
-  pinfo.lcd.primary_rdptr_irq = 0;
-  pinfo.lcd.primary_start_pos = pinfo.yres +
-  pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
+        pinfo.lcd.primary_vsync_init = pinfo.yres;
+        pinfo.lcd.primary_rdptr_irq = 0;
+        pinfo.lcd.primary_start_pos = pinfo.yres +
+        pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
 	pinfo.lcdc.border_clr = 0;
 	pinfo.lcdc.underflow_clr = 0xff;
 	pinfo.lcdc.hsync_skew = 0;
 	pinfo.bl_max = 255;
 	pinfo.bl_min = 1;
+	pinfo.is_3d_panel = FB_TYPE_3D_PANEL;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
 	pinfo.lcd.refx100 = 6200;
@@ -1243,15 +1249,13 @@ void __init shooter_init_fb(void)
 
 static int __init shooter_panel_init(void)
 {
-//	mipi_dsi_buf_alloc(&panel_tx_buf, DSI_BUF_SIZE);
-//	mipi_dsi_buf_alloc(&panel_rx_buf, DSI_BUF_SIZE);
+	mipi_dsi_buf_alloc(&panel_tx_buf, DSI_BUF_SIZE);
+	mipi_dsi_buf_alloc(&panel_rx_buf, DSI_BUF_SIZE);
 
-	switch (panel_type) {
-		case PANEL_ID_SHR_SHARP_NT:
+    if (panel_type == PANEL_ID_SHR_SHARP_NT) {
 			PR_DISP_INFO("%s: panel ID = PANEL_ID_SHR_SHARP_NT\n", __func__);
 			mipi_cmd_novatek_blue_qhd_pt_init();
-			break;
-		default:
+	}else{
 			PR_DISP_ERR("%s: panel not supported!\n", __func__);
 			return -ENODEV;
 	}
@@ -1260,3 +1264,159 @@ static int __init shooter_panel_init(void)
 }
 
 device_initcall_sync(shooter_panel_init);
+
+/* 3D Panel
+static void shooter_3Dpanel_on(bool bLandscape)
+{
+	struct pm8058_pwm_period pwm_conf;
+	int rc;
+
+	led_brightness_value_set("lcd-backlight", 255);
+
+	if (system_rev >= 1) {
+		pwm_gpio_config.output_value = 1;
+		rc = pm8xxx_gpio_config(PM8058_GPIO_PM_TO_SYS(SHOOTER_3DLCM_PD), &pwm_gpio_config);
+		if (rc < 0)
+			pr_err("%s pmic gpio config gpio %d failed\n", __func__, PM8058_GPIO_PM_TO_SYS(SHOOTER_3DLCM_PD));
+	}
+
+	rc = pm8xxx_gpio_config(PM8058_GPIO_PM_TO_SYS(SHOOTER_3DCLK), &clk_gpio_config_on);
+	if (rc < 0)
+		pr_err("%s pmic gpio config gpio %d failed\n", __func__, SHOOTER_3DCLK);
+
+	pwm_disable(pwm_3d);
+	pwm_conf.pwm_size = 9;
+	pwm_conf.clk = PM_PWM_CLK_19P2MHZ;
+	pwm_conf.pre_div = PM_PWM_PDIV_3;
+	pwm_conf.pre_div_exp = 6;
+	rc = pwm_configure(pwm_3d, &pwm_conf, 1, 255);
+	if (rc < 0)
+		pr_err("%s pmic configure %d\n", __func__, rc);
+	pwm_enable(pwm_3d);
+
+	if (bLandscape) {
+		gpio_set_value(SHOOTER_CTL_3D_1, 1);
+		gpio_set_value(SHOOTER_CTL_3D_2, 1);
+		gpio_set_value(SHOOTER_CTL_3D_3, 1);
+		gpio_set_value(SHOOTER_CTL_3D_4, 0);
+	} else {
+		gpio_set_value(SHOOTER_CTL_3D_1, 1);
+		gpio_set_value(SHOOTER_CTL_3D_2, 1);
+		gpio_set_value(SHOOTER_CTL_3D_3, 0);
+		gpio_set_value(SHOOTER_CTL_3D_4, 1);
+	}
+}
+
+static void shooter_3Dpanel_off(void)
+{
+	int rc;
+	if (system_rev >= 1) {
+		pwm_gpio_config.output_value = 0;
+		rc = pm8xxx_gpio_config(PM8058_GPIO_PM_TO_SYS(SHOOTER_3DLCM_PD), &pwm_gpio_config);
+		if (rc < 0)
+			pr_err("%s pmic gpio config gpio %d failed\n", __func__, SHOOTER_3DLCM_PD);
+	}
+	pwm_disable(pwm_3d);
+
+	rc = pm8xxx_gpio_config(PM8058_GPIO_PM_TO_SYS(SHOOTER_3DCLK), &clk_gpio_config_off);
+	if (rc < 0)
+		pr_err("%s pmic gpio config gpio %d failed\n", __func__, SHOOTER_3DCLK);
+	gpio_set_value(SHOOTER_CTL_3D_1, 0);
+	gpio_set_value(SHOOTER_CTL_3D_2, 0);
+	gpio_set_value(SHOOTER_CTL_3D_3, 0);
+	gpio_set_value(SHOOTER_CTL_3D_4, 0);
+	led_brightness_value_set("lcd-backlight", last_br_2d);
+}
+
+static ssize_t show_3D_mode(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	ssize_t len = 0;
+	len += scnprintf(buf+len, PAGE_SIZE-1, "%d\n", atomic_read(&g_3D_mode));
+	return len;
+}
+
+static ssize_t store_3D_mode(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	enum MODE_3D val = buf[0] - '0';
+
+	if (val < 0 || val >= BARRIER_END) {
+		pr_err("%s: unsupport value %c\n", __func__, val);
+		return -EINVAL;
+	}
+
+	if (val == atomic_read(&g_3D_mode)) {
+		printk(KERN_NOTICE "%s: status is same(%d)\n", __func__, val);
+		return count;
+	}
+
+	atomic_set(&g_3D_mode, val);
+	PR_DISP_INFO("%s mode = %d\n", __func__, val);
+	switch (val) {
+	case BARRIER_OFF:
+		shooter_3Dpanel_off();
+		break;
+	case BARRIER_LANDSCAPE:
+		shooter_3Dpanel_on(true);
+		break;
+	case BARRIER_PORTRAIT:
+		shooter_3Dpanel_on(false);
+		break;
+	default:
+		break;
+	}
+
+	return count;
+}
+
+static DEVICE_ATTR(3D_mode, 0666, show_3D_mode, store_3D_mode);
+
+static int shooter_3Dpanel_probe(struct platform_device *pdev)
+{
+	int err = 0;
+	printk(KERN_INFO "%s\n", __func__);
+
+	if (pwm_3d == NULL)
+		pwm_3d = pwm_request(2, "3DCLK");
+	err = device_create_file(&pdev->dev, &dev_attr_3D_mode);
+	if (err != 0)
+		printk(KERN_WARNING "attr_3D_mode failed\n");
+
+	return 0;
+}
+
+static int shooter_3Dpanel_remove(struct platform_device *pdev)
+{
+	printk(KERN_INFO "%s\n", __func__);
+	if (pwm_3d) {
+		pwm_free(pwm_3d);
+		pwm_3d = NULL;
+	}
+	device_remove_file(&pdev->dev, &dev_attr_3D_mode);
+	kobject_del(uevent_kobj);
+	kobject_del(kobj);
+	return 0;
+}
+
+struct platform_driver shooter_3Dpanel_driver = {
+	.probe	= shooter_3Dpanel_probe,
+	.remove	= shooter_3Dpanel_remove,
+	.driver	= {
+		.name = "panel_3d",
+	},
+};
+
+static int __init shooter_3Dpanel_init(void)
+{
+	pr_info("%s(%d)\n", __func__, __LINE__);
+	return platform_driver_register(&shooter_3Dpanel_driver);
+}
+
+static void __exit shooter_3Dpanel_exit(void)
+{
+	platform_driver_unregister(&shooter_3Dpanel_driver);
+}
+
+module_init(shooter_3Dpanel_init);
+module_exit(shooter_3Dpanel_exit);*/
