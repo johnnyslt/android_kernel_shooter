@@ -20,6 +20,7 @@
 #include <mach/gpio.h>
 #include <mach/panel_id.h>
 #include <mach/msm_bus_board.h>
+#include <linux/leds.h>
 #include <linux/bootmem.h>
 #include <linux/mfd/pmic8058.h>
 #include <linux/pwm.h>
@@ -44,7 +45,6 @@
 #define PANEL_ID_SHR_SHARP_NT	(0x26 | BL_MIPI | IF_MIPI | DEPTH_RGB888)
 
 #define HDMI_PANEL_NAME "hdmi_msm"
-
 
 static int msm_fb_detect_panel(const char *name)
 {
@@ -769,13 +769,13 @@ struct mdp_table_entry mdp_sharp_barrier_off[] = {
 	{0x90070, 0x17	  , 0x17},
 };
 
-/*int shooter_mdp_gamma(void)
+int shooter_mdp_gamma(void)
 {
-	PR_DISP_INFO("%s\n", __func__);
-	mdp4_dsi_color_enhancement(mdp_sharp_barrier_off, ARRAY_SIZE(mdp_sharp_barrier_off));
+  mdp_color_enhancement(shooter_color_v11, ARRAY_SIZE(shooter_color_v11));
+  mdp_color_enhancement(mdp_sharp_barrier_off, ARRAY_SIZE(mdp_sharp_barrier_off));
 
 	return 0;
-}*/
+}
 
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = GPIO_LCD_TE,
@@ -1047,6 +1047,39 @@ static int shooter_lcd_off(struct platform_device *pdev)
 #define PWM_DEFAULT			91
 #define PWM_MAX				232
 
+static struct pm_gpio pwm_gpio_config = {
+		.direction	= PM_GPIO_DIR_OUT,
+		.output_value	= 0,
+		.output_buffer	= PM_GPIO_OUT_BUF_CMOS,
+		.pull		= PM_GPIO_PULL_NO,
+		.out_strength	= PM_GPIO_STRENGTH_HIGH,
+		.function	= PM_GPIO_FUNC_NORMAL,
+		.vin_sel	= PM8058_GPIO_VIN_L5,
+		.inv_int_pol	= 0,
+};
+
+static struct pm_gpio clk_gpio_config_on = {
+				.direction	= PM_GPIO_DIR_OUT,
+				.output_value	= 1,
+				.output_buffer	= PM_GPIO_OUT_BUF_CMOS,
+				.pull		= PM_GPIO_PULL_NO,
+				.out_strength	= PM_GPIO_STRENGTH_HIGH,
+				.function	= PM_GPIO_FUNC_2,
+				.vin_sel	= PM8058_GPIO_VIN_L5,
+				.inv_int_pol	= 0,
+};
+
+static struct pm_gpio clk_gpio_config_off = {
+				.direction	= PM_GPIO_DIR_OUT,
+				.output_value	= 0,
+				.output_buffer	= PM_GPIO_OUT_BUF_CMOS,
+				.pull		= PM_GPIO_PULL_NO,
+				.out_strength	= PM_GPIO_STRENGTH_HIGH,
+				.function	= PM_GPIO_FUNC_NORMAL,
+				.vin_sel	= PM8058_GPIO_VIN_L5,
+				.inv_int_pol	= 0,
+};
+
 enum MODE_3D {
 	BARRIER_OFF       = 0,
 	BARRIER_LANDSCAPE = 1,
@@ -1054,9 +1087,13 @@ enum MODE_3D {
 	BARRIER_END
 };
 
+atomic_t g_3D_mode = ATOMIC_INIT(BARRIER_OFF);
+static struct pwm_device *pwm_3d = NULL;
+struct kobject *kobj, *uevent_kobj;
+struct kset *uevent_kset;
+
 unsigned char shrink_br = BRI_SETTING_MAX;
 unsigned char last_br_2d = BRI_SETTING_MAX;
-atomic_t g_3D_mode = ATOMIC_INIT(BARRIER_OFF);
 
 static unsigned char shooter_shrink_pwm(int val)
 {
@@ -1189,10 +1226,10 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.lcdc.v_back_porch = 16;
 	pinfo.lcdc.v_front_porch = 16;
 	pinfo.lcdc.v_pulse_width = 4;
-        pinfo.lcd.primary_vsync_init = pinfo.yres;
-        pinfo.lcd.primary_rdptr_irq = 0;
-        pinfo.lcd.primary_start_pos = pinfo.yres +
-        pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
+  pinfo.lcd.primary_vsync_init = pinfo.yres;
+  pinfo.lcd.primary_rdptr_irq = 0;
+  pinfo.lcd.primary_start_pos = pinfo.yres +
+  pinfo.lcd.v_back_porch + pinfo.lcd.v_front_porch - 1;
 	pinfo.lcdc.border_clr = 0;
 	pinfo.lcdc.underflow_clr = 0xff;
 	pinfo.lcdc.hsync_skew = 0;
@@ -1255,7 +1292,7 @@ static int __init shooter_panel_init(void)
     if (panel_type == PANEL_ID_SHR_SHARP_NT) {
 			PR_DISP_INFO("%s: panel ID = PANEL_ID_SHR_SHARP_NT\n", __func__);
 			mipi_cmd_novatek_blue_qhd_pt_init();
-	}else{
+		}else{
 			PR_DISP_ERR("%s: panel not supported!\n", __func__);
 			return -ENODEV;
 	}
@@ -1265,13 +1302,13 @@ static int __init shooter_panel_init(void)
 
 device_initcall_sync(shooter_panel_init);
 
-/* 3D Panel
+/* 3D Panel */
 static void shooter_3Dpanel_on(bool bLandscape)
 {
 	struct pm8058_pwm_period pwm_conf;
 	int rc;
 
-	led_brightness_value_set("lcd-backlight", 255);
+//	led_brightness_value_set("lcd-backlight", 255);
 
 	if (system_rev >= 1) {
 		pwm_gpio_config.output_value = 1;
@@ -1325,7 +1362,7 @@ static void shooter_3Dpanel_off(void)
 	gpio_set_value(SHOOTER_CTL_3D_2, 0);
 	gpio_set_value(SHOOTER_CTL_3D_3, 0);
 	gpio_set_value(SHOOTER_CTL_3D_4, 0);
-	led_brightness_value_set("lcd-backlight", last_br_2d);
+//	led_brightness_value_set("lcd-backlight", last_br_2d);
 }
 
 static ssize_t show_3D_mode(struct device *dev,
@@ -1419,4 +1456,4 @@ static void __exit shooter_3Dpanel_exit(void)
 }
 
 module_init(shooter_3Dpanel_init);
-module_exit(shooter_3Dpanel_exit);*/
+module_exit(shooter_3Dpanel_exit);
