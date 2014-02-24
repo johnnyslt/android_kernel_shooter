@@ -790,6 +790,7 @@ static struct msm_panel_common_pdata mdp_pdata = {
 	.mem_hid = BIT(ION_CP_WB_HEAP_ID),
 	.cont_splash_enabled = 0x00,
 	.mdp_iommu_split_domain = 0,
+	.mdp_gamma = shooter_mdp_gamma
 };
 
 void __init shooter_mdp_writeback(struct memtype_reserve* reserve_table)
