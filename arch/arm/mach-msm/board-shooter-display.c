@@ -822,9 +822,106 @@ static struct platform_device wfd_device = {
 };
 #endif
 
-/*
- * Regulator initialization moved to mipi_dsi
- */
+static int first_init = 1;
+
+static int mipi_dsi_panel_power(const int on)
+{
+	static bool dsi_power_on = false;
+	static struct regulator *v_lcm, *v_lcmio;
+	static bool bPanelPowerOn = false;
+	int rc;
+
+	const char * const lcm_str 	  = "8058_l12";
+	const char * const lcmio_str  = "8901_lvs1";
+
+	PR_DISP_INFO("%s: state : %d\n", __func__, on);
+
+	if (!dsi_power_on) {
+
+		v_lcm = regulator_get(NULL,
+				lcm_str);
+		if (IS_ERR(v_lcm)) {
+			PR_DISP_ERR("could not get %s, rc = %ld\n",
+				lcm_str, PTR_ERR(v_lcm));
+			return -ENODEV;
+		}
+
+		v_lcmio = regulator_get(NULL,
+				lcmio_str);
+		if (IS_ERR(v_lcmio)) {
+			PR_DISP_ERR("could not get %s, rc = %ld\n",
+				lcmio_str, PTR_ERR(v_lcmio));
+			return -ENODEV;
+		}
+
+		if (panel_type == PANEL_ID_SHR_SHARP_NT) {
+			rc = regulator_set_voltage(v_lcm, 3000000, 3000000);
+			if (rc) {
+				PR_DISP_ERR("%s#%d: set_voltage %s failed, rc=%d\n", __func__, __LINE__, lcm_str, rc);
+				return -EINVAL;
+			}
+		}
+
+		rc = gpio_request(GPIO_LCM_RST_N, "LCM_RST_N");
+		if (rc) {
+			PR_DISP_ERR("%s:LCM gpio %d request failed, rc=%d\n", __func__,  GPIO_LCM_RST_N, rc);
+			return -EINVAL;
+		}
+		dsi_power_on = true;
+	}
+
+	if (on) {
+		PR_DISP_INFO("%s: on\n", __func__);
+		rc = regulator_set_optimum_mode(v_lcm, 100000);
+		if (rc < 0) {
+			PR_DISP_ERR("set_optimum_mode %s failed, rc=%d\n", lcm_str, rc);
+			return -EINVAL;
+		}
+
+		hr_msleep(1);
+		rc = regulator_enable(v_lcmio);
+		if (rc) {
+			PR_DISP_ERR("enable regulator %s failed, rc=%d\n", lcmio_str, rc);
+			return -ENODEV;
+		}
+
+		rc = regulator_enable(v_lcm);
+		if (rc) {
+			PR_DISP_ERR("enable regulator %s failed, rc=%d\n", lcm_str, rc);
+			return -ENODEV;
+		}
+
+		if (!first_init) {
+			hr_msleep(10);
+			gpio_set_value(GPIO_LCM_RST_N, 1);
+			hr_msleep(1);
+			gpio_set_value(GPIO_LCM_RST_N, 0);
+			hr_msleep(35);
+			gpio_set_value(GPIO_LCM_RST_N, 1);
+		}
+		hr_msleep(60);
+		bPanelPowerOn = true;
+	} else {
+		PR_DISP_INFO("%s: off\n", __func__);
+		if (!bPanelPowerOn) return 0;
+		hr_msleep(100);
+		gpio_set_value(GPIO_LCM_RST_N, 0);
+		hr_msleep(10);
+
+		if (regulator_disable(v_lcm)) {
+			PR_DISP_ERR("%s: Unable to enable the regulator: %s\n", __func__, lcm_str);
+			return -EINVAL;
+		}
+		hr_msleep(5);
+		if (regulator_disable(v_lcmio)) {
+			PR_DISP_ERR("%s: Unable to enable the regulator: %s\n", __func__, lcmio_str);
+			return -EINVAL;
+		}
+
+		bPanelPowerOn = false;
+	}
+	return 0;
+}
 
 static char mipi_dsi_splash_is_enabled(void)
 {
@@ -833,6 +930,7 @@ static char mipi_dsi_splash_is_enabled(void)
 
 static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.vsync_gpio = GPIO_LCD_TE,
+	.dsi_power_save = mipi_dsi_panel_power,
 	.splash_is_enabled = mipi_dsi_splash_is_enabled,
 };
 
