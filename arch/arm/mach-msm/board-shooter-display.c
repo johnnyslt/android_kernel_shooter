@@ -877,9 +877,9 @@ static int mipi_dsi_panel_power(const int on)
 			PR_DISP_ERR("set_optimum_mode %s failed, rc=%d\n", lcm_str, rc);
 			return -EINVAL;
 		}
-
 		hr_msleep(1);
 		rc = regulator_enable(v_lcmio);
+
 		if (rc) {
 			PR_DISP_ERR("enable regulator %s failed, rc=%d\n", lcmio_str, rc);
 			return -ENODEV;
@@ -896,17 +896,16 @@ static int mipi_dsi_panel_power(const int on)
 			gpio_set_value(GPIO_LCM_RST_N, 1);
 			hr_msleep(1);
 			gpio_set_value(GPIO_LCM_RST_N, 0);
-			hr_msleep(35);
+			hr_msleep(1);
 			gpio_set_value(GPIO_LCM_RST_N, 1);
+			hr_msleep(20);
 		}
-		hr_msleep(60);
 		bPanelPowerOn = true;
 	} else {
 		PR_DISP_INFO("%s: off\n", __func__);
 		if (!bPanelPowerOn) return 0;
-		hr_msleep(100);
 		gpio_set_value(GPIO_LCM_RST_N, 0);
-		hr_msleep(10);
+		hr_msleep(5);
 
 		if (regulator_disable(v_lcm)) {
 			PR_DISP_ERR("%s: Unable to enable the regulator: %s\n", __func__, lcm_str);
@@ -946,7 +945,6 @@ static char display_on[2] = {0x29, 0x00};
 static char enable_te[2] = {0x35, 0x00};
 static char test_reg[3] = {0x44, 0x02, 0xCF};
 static char test_reg_qhd[3] = {0x44, 0x01, 0x3f};/* DTYPE_DCS_LWRITE */ /* 479:1b7; 319:13f; 479:1df */
-//static char test_reg_ruy_auo[3] = {0x44, 0x01, 0x68};
 static char set_twolane[2] = {0xae, 0x03};
 static char rgb_888[2] = {0x3A, 0x77};
 static char novatek_f4[2] = {0xf4, 0x55};
