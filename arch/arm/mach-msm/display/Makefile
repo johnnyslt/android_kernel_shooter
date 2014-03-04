@@ -1,6 +1,6 @@
 obj-$(CONFIG_MACH_PYRAMID) += pyramid-panel.o
 obj-$(CONFIG_MACH_SHOOTER) += shooter-panel.o
-obj-$(CONFIG_MACH_SHOOTER_U) += shooter-panel.o
+#obj-$(CONFIG_MACH_SHOOTER_U) += shooter-panel.o
 obj-$(CONFIG_MACH_SHOOTER_K) += shooter_k-panel.o
 obj-$(CONFIG_MACH_SHOOTER_CT) += shooter-panel.o
 obj-$(CONFIG_MACH_RIDER) += rider-panel.o

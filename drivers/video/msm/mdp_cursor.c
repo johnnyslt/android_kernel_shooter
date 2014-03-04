@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2009, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2008-2009, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -8,11 +8,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
  *
  */
 
@@ -41,7 +36,7 @@ static int cursor_enabled;
 
 #include "mdp4.h"
 
-#if	defined(CONFIG_FB_MSM_OVERLAY) && defined(CONFIG_MSM_MDP40)
+#if	defined(CONFIG_FB_MSM_OVERLAY) && defined(CONFIG_FB_MSM_MDP40)
 static struct workqueue_struct *mdp_cursor_ctrl_wq;
 static struct work_struct mdp_cursor_ctrl_worker;
 
@@ -199,7 +194,7 @@ int mdp_hw_cursor_sync_update(struct fb_info *info, struct fb_cursor *cursor)
 
 	return 0;
 }
-#endif /* CONFIG_FB_MSM_OVERLAY && CONFIG_MSM_MDP40 */
+#endif /* CONFIG_FB_MSM_OVERLAY && CONFIG_FB_MSM_MDP40 */
 
 int mdp_hw_cursor_update(struct fb_info *info, struct fb_cursor *cursor)
 {
@@ -214,6 +209,7 @@ int mdp_hw_cursor_update(struct fb_info *info, struct fb_cursor *cursor)
 	    (img->depth != 32))
 		return -EINVAL;
 
+	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 	if (cursor->set & FB_CUR_SETPOS)
 		MDP_OUTP(MDP_BASE + 0x9004c, (img->dy << 16) | img->dx);
 
@@ -243,7 +239,7 @@ int mdp_hw_cursor_update(struct fb_info *info, struct fb_cursor *cursor)
 		MDP_OUTP(MDP_BASE + 0x90060,
 			 (transp_en << 3) | (calpha_en << 1) |
 			 (inp32(MDP_BASE + 0x90060) & 0x1));
-#ifdef CONFIG_MSM_MDP40
+#ifdef CONFIG_FB_MSM_MDP40
 		MDP_OUTP(MDP_BASE + 0x90064, (alpha << 24));
 		MDP_OUTP(MDP_BASE + 0x90068, (0xffffff & img->bg_color));
 		MDP_OUTP(MDP_BASE + 0x9006C, (0xffffff & img->bg_color));
@@ -262,6 +258,7 @@ int mdp_hw_cursor_update(struct fb_info *info, struct fb_cursor *cursor)
 		MDP_OUTP(MDP_BASE + 0x90060,
 			 inp32(MDP_BASE + 0x90060) & (~0x1));
 	}
+	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
 
 	return 0;
 }
