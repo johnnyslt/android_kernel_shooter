@@ -705,6 +705,7 @@ config MACH_SHOOTER
 	depends on ARCH_MSM8X60
 	default n
 	bool "shooter"
+	select FB_MSM_MIPI_DSI
 	help
 	  Support for the Shooter device.
 
