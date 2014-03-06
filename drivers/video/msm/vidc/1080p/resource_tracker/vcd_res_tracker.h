@@ -41,9 +41,6 @@ struct res_trk_context {
 	unsigned int perf_level;
 	struct regulator *footswitch;
 	struct msm_vidc_platform_data *vidc_platform_data;
-	int memtype;
-	int fw_mem_type;
-	int cmd_mem_type;
 #ifdef CONFIG_MSM_BUS_SCALING
 	struct msm_bus_scale_pdata *vidc_bus_client_pdata;
 	uint32_t     pcl;

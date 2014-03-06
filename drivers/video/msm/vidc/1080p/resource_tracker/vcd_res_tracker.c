@@ -729,7 +729,6 @@ void res_trk_init(struct device *device, u32 irq)
 				vidc_bus_client_pdata;
 #endif
 		} else {
-			resource_context.memtype = -1;
 			resource_context.disable_dmx = 0;
 		}
 		resource_context.core_type = VCD_CORE_1080P;
@@ -942,18 +941,18 @@ int res_trk_open_secure_session()
 			goto error_open;
 		}
 
-		memtype = ION_HEAP(resource_context.memtype);
+		memtype = ION_HEAP(ION_CP_MM_HEAP_ID);
 		rc = msm_ion_secure_heap(memtype);
 		if (rc) {
 			pr_err("ION heap secure failed heap id %d rc %d\n",
-				   resource_context.memtype, rc);
+				   ION_CP_MM_HEAP_ID, rc);
 			goto disable_iommu_clks;
 		}
-		memtype = ION_HEAP(resource_context.cmd_mem_type);
+		memtype = ION_HEAP(ION_CP_MFC_HEAP_ID);
 		rc = msm_ion_secure_heap(memtype);
 		if (rc) {
 			pr_err("ION heap secure failed heap id %d rc %d\n",
-				   resource_context.cmd_mem_type, rc);
+				   ION_CP_MFC_HEAP_ID, rc);
 			goto unsecure_memtype_heap;
 		}
 		if (resource_context.vidc_platform_data->secure_wb_heap) {
@@ -970,9 +969,9 @@ int res_trk_open_secure_session()
 	mutex_unlock(&resource_context.secure_lock);
 	return 0;
 unsecure_cmd_heap:
-	msm_ion_unsecure_heap(ION_HEAP(resource_context.cmd_mem_type));
+	msm_ion_unsecure_heap(ION_HEAP(ION_CP_MFC_HEAP_ID));
 unsecure_memtype_heap:
-	msm_ion_unsecure_heap(ION_HEAP(resource_context.memtype));
+	msm_ion_unsecure_heap(ION_HEAP(ION_CP_MM_HEAP_ID));
 disable_iommu_clks:
 	res_trk_disable_iommu_clocks();
 error_open:
@@ -993,8 +992,8 @@ int res_trk_close_secure_session()
 			pr_err("IOMMU clock enabled failed while close\n");
 			goto error_close;
 		}
-		msm_ion_unsecure_heap(ION_HEAP(resource_context.cmd_mem_type));
-		msm_ion_unsecure_heap(ION_HEAP(resource_context.memtype));
+		msm_ion_unsecure_heap(ION_HEAP(ION_CP_MFC_HEAP_ID));
+		msm_ion_unsecure_heap(ION_HEAP(ION_CP_MM_HEAP_ID));
 
 		if (resource_context.vidc_platform_data->secure_wb_heap)
 			msm_ion_unsecure_heap(ION_HEAP(ION_CP_WB_HEAP_ID));
