@@ -799,8 +799,8 @@ static int mipi_dsi_panel_power(const int on)
 	static bool bPanelPowerOn = false;
 	int rc;
 
-	const char * const lcm_str 	  = "8058_l12";
-	const char * const lcmio_str  = "8901_lvs1";
+	const char * const lcm_str	= "8058_l12";
+	const char * const lcmio_str	= "8901_lvs1";
 
 	PR_DISP_INFO("%s: state : %d\n", __func__, on);
 
@@ -823,7 +823,7 @@ static int mipi_dsi_panel_power(const int on)
 		}
 
 		if (panel_type == PANEL_ID_SHR_SHARP_NT) {
-			rc = regulator_set_voltage(v_lcm, 3000000, 3000000);
+			rc = regulator_set_voltage(v_lcm, 2850000, 2850000);
 			if (rc) {
 				PR_DISP_ERR("%s#%d: set_voltage %s failed, rc=%d\n", __func__, __LINE__, lcm_str, rc);
 				return -EINVAL;
