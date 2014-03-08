@@ -1050,7 +1050,7 @@ static int shooter_lcd_on(struct platform_device *pdev)
 			printk(KERN_INFO "shooter_lcd_on PANEL_ID_SHR_SHARP_NT\n");
 			cmdreq.cmds = shr_sharp_cmd_on_cmds;
 			cmdreq.cmds_cnt = ARRAY_SIZE(shr_sharp_cmd_on_cmds);
-			cmdreq.flags = CMD_REQ_COMMIT;
+			cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
 			cmdreq.rlen = 0;
 			cmdreq.cb = NULL;
 

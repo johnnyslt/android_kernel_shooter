@@ -81,8 +81,6 @@ static int mipi_dsi_off(struct platform_device *pdev) {
 
 	if (mfd->panel_info.type == MIPI_CMD_PANEL) {
 		mipi_dsi_clk_cfg(1);
-
-		
 		mipi_dsi_cmd_mdp_busy();
 	}
 	mipi_dsi_op_mode_config(DSI_CMD_MODE);
