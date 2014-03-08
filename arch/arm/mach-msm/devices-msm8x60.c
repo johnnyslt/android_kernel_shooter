@@ -2085,10 +2085,6 @@ static struct msm_rotator_platform_data rotator_pdata = {
 	.number_of_clocks = ARRAY_SIZE(rotator_clocks),
 	.hardware_version_number = 0x01010307,
 	.rotator_clks = rotator_clocks,
-	.regulator_name = "fs_rot",
-#ifdef CONFIG_MSM_BUS_SCALING
-	.bus_scale_table = &rotator_bus_scale_pdata,
-#endif
 	.rot_iommu_split_domain = 0,
 };
 
