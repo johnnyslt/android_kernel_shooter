@@ -2085,6 +2085,7 @@ static struct msm_rotator_platform_data rotator_pdata = {
 	.number_of_clocks = ARRAY_SIZE(rotator_clocks),
 	.hardware_version_number = 0x01010307,
 	.rotator_clks = rotator_clocks,
+	.regulator_name = "fs_rot",
 	.rot_iommu_split_domain = 0,
 };
 

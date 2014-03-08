@@ -2888,8 +2888,7 @@ static int __devinit msm_rotator_probe(struct platform_device *pdev)
 		}
 	}
 
-	msm_rotator_dev->regulator = regulator_get(&msm_rotator_dev->pdev->dev,
-						   "vdd");
+	msm_rotator_dev->regulator = regulator_get(NULL, pdata->regulator_name);
 	if (IS_ERR(msm_rotator_dev->regulator))
 		msm_rotator_dev->regulator = NULL;
 
