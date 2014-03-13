@@ -23,9 +23,9 @@
 
 #define BIT(x)  (1<<(x))
 
-#define MMSS_CC_BASE_PHY 0x04000000	
-#define MMSS_SFPB_BASE_PHY 0x05700000	
-#define MMSS_SERDES_BASE_PHY 0x04f01000 
+#define MMSS_CC_BASE_PHY 0x04000000
+#define MMSS_SFPB_BASE_PHY 0x05700000
+#define MMSS_SERDES_BASE_PHY 0x04f01000
 
 #define MIPI_DSI_BASE mipi_dsi_base
 
@@ -54,7 +54,7 @@
 #define MIPI_DSI_PANEL_720P_PT	8
 #define DSI_PANEL_MAX	8
 
-enum {		
+enum {
 	DSI_VIDEO_MODE,
 	DSI_CMD_MODE,
 };
@@ -120,10 +120,10 @@ enum dsi_trigger_type {
 #define DSI_MDP_TERM	BIT(8)
 #define DSI_CMD_TERM	BIT(0)
 
-#define DSI_CMD_TRIGGER_NONE		0x0	
+#define DSI_CMD_TRIGGER_NONE		0x0
 #define DSI_CMD_TRIGGER_TE		0x02
 #define DSI_CMD_TRIGGER_SW		0x04
-#define DSI_CMD_TRIGGER_SW_SEOF		0x05	
+#define DSI_CMD_TRIGGER_SW_SEOF		0x05
 #define DSI_CMD_TRIGGER_SW_TE		0x06
 
 extern struct device dsi_dev;
@@ -132,16 +132,16 @@ extern u32 dsi_irq;
 extern u32 esc_byte_ratio;
 
 extern void  __iomem *periph_base;
-extern char *mmss_cc_base;	
-extern char *mmss_sfpb_base;	
+extern char *mmss_cc_base;
+extern char *mmss_sfpb_base;
 
 struct dsiphy_pll_divider_config {
 	u32 clk_rate;
 	u32 fb_divider;
 	u32 ref_divider_ratio;
-	u32 bit_clk_divider;	
-	u32 byte_clk_divider;	
-	u32 dsi_clk_divider;	
+	u32 bit_clk_divider;
+	u32 byte_clk_divider;
+	u32 dsi_clk_divider;
 };
 
 extern struct dsiphy_pll_divider_config pll_divider_config;
@@ -189,57 +189,57 @@ struct dsi_clk_desc {
 #define DSI_HDR_WC(wc)		((wc) & 0x0ffff)
 
 #define DSI_BUF_SIZE	64
-#define MIPI_DSI_MRPS	0x04	
+#define MIPI_DSI_MRPS	0x04
 
-#define MIPI_DSI_LEN 8 
+#define MIPI_DSI_LEN 8
 
 struct dsi_buf {
-	uint32 *hdr;	
-	char *start;	
-	char *end;	
-	int size;	
-	char *data;	
-	int len;	
-	dma_addr_t dmap; 
+	uint32 *hdr;
+	char *start;
+	char *end;
+	int size;
+	char *data;
+	int len;
+	dma_addr_t dmap;
 };
 
-#define DTYPE_DCS_WRITE		0x05	
-#define DTYPE_DCS_WRITE1	0x15	
-#define DTYPE_DCS_READ		0x06	
-#define DTYPE_DCS_LWRITE	0x39	
+#define DTYPE_DCS_WRITE		0x05
+#define DTYPE_DCS_WRITE1	0x15
+#define DTYPE_DCS_READ		0x06
+#define DTYPE_DCS_LWRITE	0x39
 
-#define DTYPE_GEN_WRITE		0x03	
-#define DTYPE_GEN_WRITE1	0x13	
-#define DTYPE_GEN_WRITE2	0x23	
-#define DTYPE_GEN_LWRITE	0x29	
-#define DTYPE_GEN_READ		0x04	
-#define DTYPE_GEN_READ1		0x14	
-#define DTYPE_GEN_READ2		0x24	
+#define DTYPE_GEN_WRITE		0x03
+#define DTYPE_GEN_WRITE1	0x13
+#define DTYPE_GEN_WRITE2	0x23
+#define DTYPE_GEN_LWRITE	0x29
+#define DTYPE_GEN_READ		0x04
+#define DTYPE_GEN_READ1		0x14
+#define DTYPE_GEN_READ2		0x24
 
-#define DTYPE_TEAR_ON		0x35	
-#define DTYPE_MAX_PKTSIZE	0x37	
-#define DTYPE_NULL_PKT		0x09	
-#define DTYPE_BLANK_PKT		0x19	
+#define DTYPE_TEAR_ON		0x35
+#define DTYPE_MAX_PKTSIZE	0x37
+#define DTYPE_NULL_PKT		0x09
+#define DTYPE_BLANK_PKT		0x19
 
-#define DTYPE_CM_ON		0x02	
-#define DTYPE_CM_OFF		0x12	
+#define DTYPE_CM_ON		0x02
+#define DTYPE_CM_OFF		0x12
 #define DTYPE_PERIPHERAL_OFF	0x22
 #define DTYPE_PERIPHERAL_ON	0x32
 
 #define DTYPE_ACK_ERR_RESP      0x02
-#define DTYPE_EOT_RESP          0x08    
-#define DTYPE_GEN_READ1_RESP    0x11    
-#define DTYPE_GEN_READ2_RESP    0x12    
+#define DTYPE_EOT_RESP          0x08
+#define DTYPE_GEN_READ1_RESP    0x11
+#define DTYPE_GEN_READ2_RESP    0x12
 #define DTYPE_GEN_LREAD_RESP    0x1a
 #define DTYPE_DCS_LREAD_RESP    0x1c
-#define DTYPE_DCS_READ1_RESP    0x21    
-#define DTYPE_DCS_READ2_RESP    0x22    
+#define DTYPE_DCS_READ1_RESP    0x21
+#define DTYPE_DCS_READ2_RESP    0x22
 
 struct dsi_cmd_desc {
 	int dtype;
 	int last;
 	int vc;
-	int ack;	
+	int ack;
 	int wait;
 	int dlen;
 	char *payload;
@@ -266,7 +266,7 @@ struct dcs_cmd_req {
 	struct dsi_cmd_desc *cmds;
 	int cmds_cnt;
 	u32 flags;
-	int rlen;	
+	int rlen;
 	fxn cb;
 };
 
@@ -346,4 +346,4 @@ void mipi_dsi_cmd_mdp_busy(void);
 void update_lane_config(struct msm_panel_info *pinfo);
 #endif
 
-#endif 
+#endif

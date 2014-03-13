@@ -1,5 +1,7 @@
 /* Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
  *
+ * Copyright (c) 2014 Sultanxda <sultanxda@gmail.com>
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
  * only version 2 as published by the Free Software Foundation.
@@ -103,8 +105,8 @@ static int mipi_dsi_off(struct platform_device *pdev) {
 
 	mipi_dsi_clk_turn_off();
 
-	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save)
-		mipi_dsi_pdata->dsi_power_save(0);
+	if (mipi_dsi_pdata)
+		mipi_dsi_panel_power(0);
 
 	if (mdp_rev >= MDP_REV_41)
 		mutex_unlock(&mfd->dma->ov_mutex);
@@ -142,8 +144,8 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	esc_byte_ratio = 2;
 #endif
 
-	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save)
-		mipi_dsi_pdata->dsi_power_save(1);
+	if (mipi_dsi_pdata)
+		mipi_dsi_panel_power(1);
 
 	if (mdp_rev == MDP_REV_42 && mipi_dsi_pdata)
 		target_type = mipi_dsi_pdata->target_type;
