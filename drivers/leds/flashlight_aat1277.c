@@ -199,7 +199,7 @@ static void flashlight_early_suspend(struct early_suspend *handler)
 		if (fl_str->mode_status == FL_MODE_FLASH)
 			hrtimer_cancel(&fl_str->timer);
 		spin_lock_irqsave(&fl_str->spin_lock, fl_str->spinlock_flags);
-		flashlight_turn_off();
+//		flashlight_turn_off();
 		spin_unlock_irqrestore(&fl_str->spin_lock,
 						fl_str->spinlock_flags);
 	}
