@@ -728,8 +728,6 @@ config MACH_SHOOTER_K
 config MACH_SHOOTER_CT
         depends on ARCH_MSM8X60
         default n
-        select SMP_PARALLEL_START
-        select FB_MSM_MIPI_DSI
         bool "shooter_ct"
         select SMP_PARALLEL_START
         select FB_MSM_MIPI_DSI
