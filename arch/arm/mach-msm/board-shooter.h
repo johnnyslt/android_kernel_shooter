@@ -36,7 +36,7 @@
 #define MSM_ION_MM_FW_SIZE      0x200000
 #define MSM_ION_MM_SIZE         0x2A00000
 #define MSM_ION_MFC_SIZE        0x300000
-#define MSM_ION_SF_SIZE         0x2A00000
+#define MSM_ION_SF_SIZE         0x2B00000
 #define MSM_ION_SMI_SIZE        0x3600000
 #define MSM_ION_WB_SIZE         0x600000
 
