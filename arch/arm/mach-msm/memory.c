@@ -363,6 +363,7 @@ int release_fmem_c_region(void *unused)
 static char * const memtype_names[] = {
 	[MEMTYPE_SMI_KERNEL] = "SMI_KERNEL",
 	[MEMTYPE_SMI]	= "SMI",
+	[MEMTYPE_SMI_ION] = "SMI_ION",
 	[MEMTYPE_EBI0] = "EBI0",
 	[MEMTYPE_EBI1] = "EBI1",
 };
