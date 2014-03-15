@@ -1315,6 +1315,8 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.pdest = DISPLAY_1;
 	pinfo.wait_cycle = 0;
 	pinfo.bpp = 24;
+	pinfo.width = 53;
+	pinfo.height = 95;
 	pinfo.lcdc.h_back_porch = 64;
 	pinfo.lcdc.h_front_porch = 96;
 	pinfo.lcdc.h_pulse_width = 32;
