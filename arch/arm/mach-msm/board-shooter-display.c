@@ -85,48 +85,90 @@ void __init shooter_allocate_fb_region(void)
 static struct msm_bus_vectors mdp_init_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
 		.ib = 0,
 	},
 };
 
-static struct msm_bus_vectors mdp_ui_vectors[] = {
+static struct msm_bus_vectors mdp_sd_smi_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 147460000,
+		.ib = 184325000,
+	},
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 216000000 * 2,
-		.ib = 270000000 * 2,
+		.ab = 0,
+		.ib = 0,
+	},
+};
+
+static struct msm_bus_vectors mdp_sd_ebi_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 168652800,
+		.ib = 337305600,
 	},
 };
 
 static struct msm_bus_vectors mdp_vga_vectors[] = {
-	/* VGA and less video */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 37478400,
+		.ib = 74956800,
+	},
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 216000000 * 2,
-		.ib = 270000000 * 2,
+		.ab = 206131200,
+		.ib = 412262400,
 	},
 };
 
 static struct msm_bus_vectors mdp_720p_vectors[] = {
-	/* 720p and less video */
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 112435200,
+		.ib = 224870400,
+	},
+  {
+		.src = MSM_BUS_MASTER_MDP_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 230400000 * 2,
-		.ib = 288000000 * 2,
+		.ab = 281088000,
+		.ib = 562176000,
 	},
 };
 
 static struct msm_bus_vectors mdp_1080p_vectors[] = {
-	/* 1080p and less video */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 252979200,
+		.ib = 505958400,
+	},
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 334080000 * 2,
-		.ib = 417600000 * 2,
+		.ab = 421632000,
+		.ib = 843264000,
 	},
 };
 
@@ -136,12 +178,12 @@ static struct msm_bus_paths mdp_bus_scale_usecases[] = {
 		mdp_init_vectors,
 	},
 	{
-		ARRAY_SIZE(mdp_ui_vectors),
-		mdp_ui_vectors,
+		ARRAY_SIZE(mdp_sd_smi_vectors),
+		mdp_sd_smi_vectors,
 	},
 	{
-		ARRAY_SIZE(mdp_ui_vectors),
-		mdp_ui_vectors,
+		ARRAY_SIZE(mdp_sd_ebi_vectors),
+		mdp_sd_ebi_vectors,
 	},
 	{
 		ARRAY_SIZE(mdp_vga_vectors),
