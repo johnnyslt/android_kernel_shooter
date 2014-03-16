@@ -644,14 +644,6 @@ config PMIC8058_BATTALARM
 	  Qualcomm PM8058 PMIC chip.  This support allows for configuration of
 	  the alarm module as well as interrupt handling.
 
-config TZCOM
-	tristate "Trustzone Communicator driver"
-	default n
-	help
-	  Provides a communication interface between userspace and
-	  TrustZone Operating Environment (TZBSP) using Secure Channel
-	  Manager (SCM) interface.
-
 config QFP_FUSE
 	tristate "QFPROM Fuse Read/Write support"
 	help
