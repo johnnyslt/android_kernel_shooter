@@ -25,13 +25,14 @@ unsigned int get_num_populated_chipselects(void);
 unsigned int get_num_memory_banks(void);
 unsigned int get_memory_bank_size(unsigned int);
 unsigned int get_memory_bank_start(unsigned int);
+int soc_change_memory_power(u64, u64, int);
 
 enum {
 	MEMTYPE_NONE = -1,
 	MEMTYPE_SMI_KERNEL = 0,
 	MEMTYPE_SMI,
+	MEMTYPE_SMI_ION,
 	MEMTYPE_EBI0,
-       MEMTYPE_SMI_ION,
 	MEMTYPE_EBI1,
 	MEMTYPE_MAX,
 };
@@ -42,9 +43,9 @@ void msm_reserve(void);
 #define MEMTYPE_FLAGS_1M_ALIGN	0x2
 
 struct memtype_reserve {
-	phys_addr_t start;
-	phys_addr_t size;
-	phys_addr_t limit;
+	unsigned long start;
+	unsigned long size;
+	unsigned long limit;
 	int flags;
 };
 

@@ -1092,7 +1092,7 @@ static int audio_release(struct inode *inode, struct file *file)
 	wake_up(&audio->event_wait);
 	audlpa_reset_event_queue(audio);
 	iounmap(audio->data);
-	pmem_kfree(audio->phys);
+//	pmem_kfree(audio->phys);
 	if (audio->stopped == 0)
 		audlpa_allow_sleep(audio);
 	wake_lock_destroy(&audio->wakelock);
@@ -1344,7 +1344,7 @@ done:
 err:
 	q6asm_audio_client_free(audio->ac);
 	iounmap(audio->data);
-	pmem_kfree(audio->phys);
+//	pmem_kfree(audio->phys);
 	kfree(audio);
 	return rc;
 }

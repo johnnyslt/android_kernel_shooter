@@ -63,7 +63,7 @@ void map_page_strongly_ordered(void)
 	map.type = MT_DEVICE_STRONGLY_ORDERED;
 	create_mapping(&map);
 
-	printk(KERN_ALERT "[K] Initialized strongly ordered page successfully\n");
+	printk(KERN_ALERT "Initialized strongly ordered page successfully\n");
 #endif
 }
 EXPORT_SYMBOL(map_page_strongly_ordered);
@@ -75,7 +75,7 @@ void write_to_strongly_ordered_memory(void)
 		if (!in_interrupt())
 			map_page_strongly_ordered();
 		else {
-			printk(KERN_ALERT "[K] Cannot map strongly ordered page in "
+			printk(KERN_ALERT "Cannot map strongly ordered page in "
 				"Interrupt Context\n");
 
 			BUG();
@@ -200,15 +200,17 @@ static unsigned long total_stable_size(unsigned long bank)
 
 static void __init calculate_reserve_limits(void)
 {
-	struct memblock_region *mr;
+	int i;
+	struct membank *mb;
 	int memtype;
 	struct memtype_reserve *mt;
+	unsigned long size;
 
-	for_each_memblock(memory, mr) {
-		memtype = reserve_info->paddr_to_memtype(mr->base);
+	for (i = 0, mb = &meminfo.bank[0]; i < meminfo.nr_banks; i++, mb++)  {
+		memtype = reserve_info->paddr_to_memtype(mb->start);
 		if (memtype == MEMTYPE_NONE) {
-			pr_warning("unknown memory type for region at %lx\n",
-				(long unsigned int)mr->base);
+			pr_warning("unknown memory type for bank at %lx\n",
+				(long unsigned int)mb->start);
 			continue;
 		}
 		mt = &reserve_info->memtype_reserve_table[memtype];
@@ -227,8 +229,8 @@ static void __init adjust_reserve_sizes(void)
 		if (mt->flags & MEMTYPE_FLAGS_1M_ALIGN)
 			mt->size = (mt->size + SECTION_SIZE - 1) & SECTION_MASK;
 		if (mt->size > mt->limit) {
-			pr_warning("%pa size for %s too large, setting to %pa\n",
-				&mt->size, memtype_name[i], &mt->limit);
+			pr_warning("%lx size for %s too large, setting to %lx\n",
+				mt->size, memtype_name[i], mt->limit);
 			mt->size = mt->limit;
 		}
 	}
@@ -236,10 +238,11 @@ static void __init adjust_reserve_sizes(void)
 
 static void __init reserve_memory_for_mempools(void)
 {
-	int memtype, memreg_type;
+	int i, memtype, membank_type;
 	struct memtype_reserve *mt;
-	struct memblock_region *mr, *mr_candidate = NULL;
+	struct membank *mb;
 	int ret;
+	unsigned long size;
 
 	mt = &reserve_info->memtype_reserve_table[0];
 	for (memtype = 0; memtype < MEMTYPE_MAX; memtype++, mt++) {
@@ -264,15 +267,6 @@ static void __init reserve_memory_for_mempools(void)
 				break;
 			}
 		}
-		BUG_ON(mr_candidate == NULL);
-		/* bump mt up against the top of the region */
-		mt->start = mr_candidate->base + mr_candidate->size - mt->size;
-		ret = memblock_reserve(mt->start, mt->size);
-		BUG_ON(ret);
-		ret = memblock_free(mt->start, mt->size);
-		BUG_ON(ret);
-		ret = memblock_remove(mt->start, mt->size);
-		BUG_ON(ret);
 	}
 }
 
@@ -333,7 +327,7 @@ void *allocate_contiguous_ebi(unsigned long size,
 }
 EXPORT_SYMBOL(allocate_contiguous_ebi);
 
-phys_addr_t allocate_contiguous_ebi_nomap(unsigned long size,
+unsigned long allocate_contiguous_ebi_nomap(unsigned long size,
 	unsigned long align)
 {
 	return _allocate_contiguous_memory_nomap(size, get_ebi_memtype(),

@@ -433,16 +433,9 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 		if (secure_allocation &&
 			(heap->type != (enum ion_heap_type) ION_HEAP_TYPE_CP))
 			continue;
-		trace_ion_alloc_buffer_start(client->name, heap->name, len,
-					     client->heap_mask, flags);
 		buffer = ion_buffer_create(heap, dev, len, align, flags);
-		trace_ion_alloc_buffer_end(client->name, heap->name, len,
-					   client->heap_mask, flags);
 		if (!IS_ERR_OR_NULL(buffer))
 			break;
-
-		trace_ion_alloc_buffer_fallback(client->name, heap->name, len,
-					    client->heap_mask, flags, PTR_ERR(buffer));
 		if (dbg_str_idx < MAX_DBG_STR_LEN) {
 			unsigned int len_left = MAX_DBG_STR_LEN-dbg_str_idx-1;
 			int ret_value = snprintf(&dbg_str[dbg_str_idx],
