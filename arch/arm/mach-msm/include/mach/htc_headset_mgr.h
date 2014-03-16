@@ -67,7 +67,6 @@
 
 #define DRIVER_HS_MGR_RPC_SERVER	(1 << 0)
 #define DRIVER_HS_MGR_FLOAT_DET		(1 << 1)
-#define DRIVER_HS_MGR_OLD_AJ		(1 << 2)
 
 #define DEBUG_FLAG_LOG		(1 << 0)
 #define DEBUG_FLAG_ADC		(1 << 1)
@@ -125,10 +124,11 @@
 #define HS_DELAY_SEC			1000
 #define HS_DELAY_MIC_BIAS		200
 #define HS_DELAY_MIC_DETECT		1000
-#define HS_DELAY_INSERT			500
-#define HS_DELAY_REMOVE_LONG		700
-#define HS_DELAY_REMOVE_SHORT		200
+#define HS_DELAY_INSERT			300
+#define HS_DELAY_REMOVE			200
 #define HS_DELAY_BUTTON			500
+#define HS_DELAY_1WIRE_BUTTON		800
+#define HS_DELAY_1WIRE_BUTTON_SHORT	20
 #define HS_DELAY_IRQ_INIT		(10 * HS_DELAY_SEC)
 
 #define HS_JIFFIES_ZERO			msecs_to_jiffies(HS_DELAY_ZERO)
@@ -138,6 +138,8 @@
 #define HS_JIFFIES_REMOVE_LONG		msecs_to_jiffies(HS_DELAY_REMOVE_LONG)
 #define HS_JIFFIES_REMOVE_SHORT		msecs_to_jiffies(HS_DELAY_REMOVE_SHORT)
 #define HS_JIFFIES_BUTTON		msecs_to_jiffies(HS_DELAY_BUTTON)
+#define HS_JIFFIES_1WIRE_BUTTON		msecs_to_jiffies(HS_DELAY_1WIRE_BUTTON)
+#define HS_JIFFIES_1WIRE_BUTTON_SHORT	msecs_to_jiffies(HS_DELAY_1WIRE_BUTTON_SHORT)
 #define HS_JIFFIES_IRQ_INIT		msecs_to_jiffies(HS_DELAY_IRQ_INIT)
 
 #define HS_WAKE_LOCK_TIMEOUT		(2 * HZ)
@@ -165,6 +167,14 @@
 #define HS_MGR_KEYCODE_BACKWARD	KEY_PREVIOUSSONG	/* 165 */
 #define HS_MGR_KEYCODE_MEDIA	KEY_MEDIA		/* 226 */
 #define HS_MGR_KEYCODE_SEND	KEY_SEND		/* 231 */
+#define HS_MGR_KEYCODE_FF	KEY_FASTFORWARD
+#define HS_MGR_KEYCODE_RW	KEY_REWIND
+
+#define HS_MGR_2X_KEY_MEDIA		(1 << 4)
+#define HS_MGR_3X_KEY_MEDIA		(1 << 8)
+#define HS_MGR_KEY_HOLD(x)	x | (x << 4)
+#define HS_MGR_2X_HOLD_MEDIA	HS_MGR_KEY_HOLD(HS_MGR_2X_KEY_MEDIA)
+#define HS_MGR_3X_HOLD_MEDIA	HS_MGR_KEY_HOLD(HS_MGR_3X_KEY_MEDIA)
 
 enum {
 	HEADSET_UNPLUG		= 0,
@@ -182,6 +192,9 @@ enum {
 enum {
 	GOOGLE_USB_AUDIO_UNPLUG	= 0,
 	GOOGLE_USB_AUDIO_ANLG	= 1,
+#ifdef CONFIG_SUPPORT_USB_SPEAKER
+	GOOGLE_USB_AUDIO_DGTL	= 2,
+#endif
 };
 
 enum {
@@ -195,6 +208,11 @@ enum {
 	HEADSET_REG_KEY_INT_ENABLE,
 	HEADSET_REG_KEY_ENABLE,
 	HEADSET_REG_INDICATOR_ENABLE,
+	HEADSET_REG_1WIRE_INIT,
+	HEADSET_REG_1WIRE_QUERY,
+	HEADSET_REG_1WIRE_READ_KEY,
+	HEADSET_REG_1WIRE_DEINIT,
+	HEADSET_REG_1WIRE_REPORT_TYPE,
 };
 
 enum {
@@ -221,6 +239,9 @@ enum {
 	H2W_TVOUT		= 6,
 	USB_NO_HEADSET		= 7,
 	USB_AUDIO_OUT		= 8,
+#ifdef CONFIG_SUPPORT_USB_SPEAKER
+	USB_AUDIO_OUT_DGTL	= 9,
+#endif
 };
 
 struct hs_rpc_server_args_key {
@@ -263,6 +284,11 @@ struct hs_notifier_func {
 	int (*key_int_enable)(int);
 	void (*key_enable)(int);
 	int (*indicator_enable)(int);
+	int (*hs_1wire_init)(void);
+	int (*hs_1wire_query)(int);
+	int (*hs_1wire_read_key)(void);
+	int (*hs_1wire_deinit)(void);
+	int (*hs_1wire_report_type)(char **);
 };
 
 struct htc_headset_mgr_platform_data {
@@ -278,6 +304,8 @@ struct htc_headset_mgr_platform_data {
 
 	void (*headset_init)(void);
 	void (*headset_power)(int);
+	void (*uart_lv_shift_en)(int);
+	void (*uart_tx_gpo)(int);
 };
 
 struct htc_headset_mgr_info {
@@ -319,6 +347,13 @@ struct htc_headset_mgr_info {
 	int mic_detect_counter;
 	int metrico_status; /* For HW Metrico lab test */
 	int quick_boot_status;
+
+	/*Variables for one wire driver*/
+	int driver_one_wire_exist;
+	int one_wire_mode;
+	int key_code_1wire[15];
+	int key_code_1wire_index;
+	unsigned int onewire_key_delay;
 };
 
 int headset_notifier_register(struct headset_notifier *notifier);
@@ -328,7 +363,7 @@ void headset_ext_button(int headset_type, int key_code, int press);
 
 void hs_notify_driver_ready(char *name);
 void hs_notify_hpin_irq(void);
-int hs_notify_plug_event(int insert);
+int hs_notify_plug_event(int insert, unsigned int intr_id);
 int hs_notify_key_event(int key_code);
 int hs_notify_key_irq(void);
 

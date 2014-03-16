@@ -72,14 +72,14 @@ static struct snd_soc_dai_driver msm_pcm_cpu_dais[] = {
 };
 
 static struct snd_soc_codec_driver soc_codec_dev_msm = {
-	.compress_type = SND_SOC_FLAT_COMPRESSION,
+        .compress_type = SND_SOC_FLAT_COMPRESSION,
 };
 
 static __devinit int asoc_msm_codec_probe(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__, dev_name(&pdev->dev));
 	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_msm,
-		msm_pcm_codec_dais, ARRAY_SIZE(msm_pcm_codec_dais));
+                        msm_pcm_codec_dais, ARRAY_SIZE(msm_pcm_codec_dais));
 }
 
 static int __devexit asoc_msm_codec_remove(struct platform_device *pdev)
@@ -143,6 +143,5 @@ module_exit(msm_codec_dai_exit);
 module_init(msm_cpu_dai_init);
 module_exit(msm_cpu_dai_exit);
 
-/* Module information */
 MODULE_DESCRIPTION("MSM Codec/Cpu Dai driver");
 MODULE_LICENSE("GPL v2");

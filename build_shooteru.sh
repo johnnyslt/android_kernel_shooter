@@ -8,11 +8,9 @@ set -e
 time_start=$(date +%s.%N)
 
 # Number of jobs (usually the number of cores your CPU has (if Hyperthreading count each core as 2))
-MAKE="9"
+MAKE="6"
 
 ## Build kernel using shooter_defconfig
-export CROSS_COMPILE=$HOME/ionut/liquid-4.4/prebuilts/gcc/linux-x86/arm/sm-arm-eabi-4.8/bin/arm-eabi-
-export ARCH=arm
 make shooter_u_defconfig
 make -j$MAKE
 sleep 1

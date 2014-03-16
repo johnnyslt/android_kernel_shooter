@@ -18,11 +18,13 @@
  */
 
 #include <linux/gpio.h>
+#include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/platform_device.h>
 #include <linux/rtc.h>
 #include <linux/slab.h>
+#include <linux/hrtimer.h>
 
 #include <linux/mfd/pm8xxx/core.h>
 
@@ -39,7 +41,7 @@
 
 static struct workqueue_struct *detect_wq;
 static void detect_pmic_work_func(struct work_struct *work);
-static DECLARE_DELAYED_WORK(detect_pmic_work, detect_pmic_work_func);
+//static DECLARE_DELAYED_WORK(detect_pmic_work, detect_pmic_work_func);
 
 static void irq_init_work_func(struct work_struct *work);
 static DECLARE_DELAYED_WORK(irq_init_work, irq_init_work_func);
@@ -47,8 +49,14 @@ static DECLARE_DELAYED_WORK(irq_init_work, irq_init_work_func);
 static struct workqueue_struct *button_wq;
 static void button_pmic_work_func(struct work_struct *work);
 static DECLARE_DELAYED_WORK(button_pmic_work, button_pmic_work_func);
-
+static unsigned int hpin_count_global;
 static struct htc_35mm_pmic_info *hi;
+static struct detect_pmic_work_info
+	{
+		struct delayed_work hpin_work;
+		unsigned int intr_count;
+		unsigned int insert;
+	} detect_pmic_work;
 
 #ifdef HTC_HEADSET_CONFIG_MSM_RPC
 static struct msm_rpc_endpoint *endpoint_adc;
@@ -72,6 +80,13 @@ static struct hs_pmic_current_threshold current_threshold_lut[] = {
 	},
 };
 #endif
+
+static enum hrtimer_restart hs_hpin_irq_enable_func(struct hrtimer *timer)
+{
+		HS_LOG("Re-Enable HPIN IRQ");
+		enable_irq(hi->pdata.hpin_irq);
+		return HRTIMER_NORESTART;
+}
 
 static int hs_pmic_hpin_state(void)
 {
@@ -255,30 +270,43 @@ static void hs_pmic_key_enable(int enable)
 
 static void detect_pmic_work_func(struct work_struct *work)
 {
-	int insert = 0;
+//	int insert = 0;
+	struct detect_pmic_work_info *detect_pmic_work_ptr;
+	detect_pmic_work_ptr = container_of(work, struct detect_pmic_work_info, hpin_work.work);
 
 	HS_DBG();
 
-	insert = gpio_get_value(hi->pdata.hpin_gpio) ? 0 : 1;
-	hs_notify_plug_event(insert);
+//	insert = gpio_get_value_cansleep(hi->pdata.hpin_gpio) ? 0 : 1;
+	hs_notify_plug_event(detect_pmic_work_ptr->insert, detect_pmic_work_ptr->intr_count);
 }
 
 static irqreturn_t detect_irq_handler(int irq, void *data)
 {
 	unsigned int irq_mask = IRQF_TRIGGER_HIGH | IRQF_TRIGGER_LOW;
-
+	unsigned int hpin_count_local;
+	disable_irq_nosync(hi->pdata.hpin_irq);
+	HS_LOG("Disable HPIN IRQ");
+	hrtimer_start(&hi->timer, ktime_set(0, 200*NSEC_PER_MSEC), HRTIMER_MODE_REL);
+	hpin_count_local = hpin_count_global++;
+	detect_pmic_work.insert = gpio_get_value_cansleep(hi->pdata.hpin_gpio);
+	HS_LOG("HPIN++%d++, value = %d, trigger_type = 0x%x", hpin_count_local, detect_pmic_work.insert, hi->hpin_irq_type);
 	hs_notify_hpin_irq();
-
 	HS_DBG();
 
 	if (!(hi->pdata.driver_flag & DRIVER_HS_PMIC_EDGE_IRQ)) {
+		if (hi->hpin_irq_type == IRQF_TRIGGER_LOW)
+			detect_pmic_work.insert = 1;
+		else
+			detect_pmic_work.insert = 0;
 		hi->hpin_irq_type ^= irq_mask;
 		set_irq_type(hi->pdata.hpin_irq, hi->hpin_irq_type);
 	}
 
 	wake_lock_timeout(&hi->hs_wake_lock, HS_WAKE_LOCK_TIMEOUT);
-	queue_delayed_work(detect_wq, &detect_pmic_work, hi->hpin_debounce);
+	detect_pmic_work.intr_count = hpin_count_local;
+	queue_delayed_work(detect_wq, &detect_pmic_work.hpin_work, hi->hpin_debounce);
 
+	HS_LOG("HPIN--%d--, insert = %d, trigger_type = 0x%x", hpin_count_local, detect_pmic_work.insert, hi->hpin_irq_type);
 	return IRQ_HANDLED;
 }
 
@@ -324,18 +352,29 @@ static void irq_init_work_func(struct work_struct *work)
 		HS_LOG("Setup button IRQ type");
 		hi->key_irq_type = irq_type;
 		set_irq_type(hi->pdata.key_irq, hi->key_irq_type);
+
+		if (set_irq_wake(hi->pdata.key_irq, 0) < 0)
+			HS_LOG("Disable remote key irq wake failed");
 	}
 }
 
 static void hs_pmic_key_int_enable(int enable)
 {
-	if (enable) {
+	static int enable_count = 0;
+	if (enable == 1 && enable_count == 0) {
 		enable_irq(hi->pdata.key_irq);
-		HS_LOG("Enable remote key irq");
-	} else {
-		disable_irq(hi->pdata.key_irq);
-		HS_LOG("Disable remote key irq");
+		enable_count++;
+		if (set_irq_wake(hi->pdata.key_irq, 1) < 0)
+			HS_LOG("Enable remote key irq wake failed");
+		HS_LOG("Enable remote key irq and wake");
+	} else if (enable == 0 && enable_count == 1) {
+		disable_irq_nosync(hi->pdata.key_irq);
+		enable_count--;
+		if (set_irq_wake(hi->pdata.key_irq, 0) < 0)
+			HS_LOG("Disable remote key irq wake failed");
+		HS_LOG("Disable remote key irq and wake");
 	}
+	HS_LOG("enable_count = %d", enable_count);
 }
 
 static int hs_pmic_request_irq(unsigned int gpio, unsigned int *irq,
@@ -438,7 +477,9 @@ static ssize_t pmic_adc_debug_show(struct device *dev,
 	int ret = 0;
 	int adc = 0;
 
+#ifdef HTC_HEADSET_CONFIG_MSM_RPC
 	ret = hs_pmic_remote_adc(&adc);
+#endif
 	HS_DBG("button ADC = %d",adc);
 	return ret;
 }
@@ -494,7 +535,11 @@ static int htc_headset_pmic_probe(struct platform_device *pdev)
 	hi->pdata.hs_switch = pdata->hs_switch;
 	hi->pdata.adc_mic = pdata->adc_mic;
 	hi->htc_accessory_class = hs_get_attribute_class();
+	hpin_count_global = 0;
 	register_attributes();
+	INIT_DELAYED_WORK(&detect_pmic_work.hpin_work, detect_pmic_work_func);
+	hrtimer_init(&hi->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	hi->timer.function = hs_hpin_irq_enable_func;
 
 	if (!hi->pdata.adc_mic)
 		hi->pdata.adc_mic = HS_DEF_MIC_ADC_16_BIT_MIN;
