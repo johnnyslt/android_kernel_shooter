@@ -2099,6 +2099,7 @@ gfp_to_alloc_flags(gfp_t gfp_mask)
 {
 	int alloc_flags = ALLOC_WMARK_MIN | ALLOC_CPUSET;
 	const gfp_t wait = gfp_mask & __GFP_WAIT;
+	const gfp_t can_wake_kswapd = !(gfp_mask & __GFP_NO_KSWAPD);
 
 	/* __GFP_HIGH is assumed to be the same as ALLOC_HIGH to save a branch. */
 	BUILD_BUG_ON(__GFP_HIGH != (__force gfp_t) ALLOC_HIGH);
@@ -2111,7 +2112,7 @@ gfp_to_alloc_flags(gfp_t gfp_mask)
 	 */
 	alloc_flags |= (__force int) (gfp_mask & __GFP_HIGH);
 
-	if (!wait) {
+	if (!wait && can_wake_kswapd) {
 		/*
 		 * Not worth trying to allocate harder for
 		 * __GFP_NOMEMALLOC even if it can't schedule.
