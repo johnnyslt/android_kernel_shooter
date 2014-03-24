@@ -1328,11 +1328,15 @@ static int __init mipi_cmd_novatek_blue_qhd_pt_init(void)
 	pinfo.lcdc.hsync_skew = 0;
 	pinfo.bl_max = 255;
 	pinfo.bl_min = 1;
+	pinfo.fb_num = 2;
+	pinfo.clk_rate = 482000000;
 	pinfo.is_3d_panel = FB_TYPE_3D_PANEL;
 	pinfo.lcd.vsync_enable = TRUE;
 	pinfo.lcd.hw_vsync_mode = TRUE;
-	pinfo.lcd.refx100 = 6200;
-	pinfo.mipi.frame_rate = 60;
+	pinfo.lcd.refx100 = 6096;
+	pinfo.lcd.v_back_porch = 16;
+	pinfo.lcd.v_front_porch = 16;
+	pinfo.lcd.v_pulse_width = 4;
 	pinfo.mipi.mode = DSI_CMD_MODE;
 	pinfo.mipi.dst_format = DSI_CMD_DST_FORMAT_RGB888;
 	pinfo.mipi.vc = 0;
