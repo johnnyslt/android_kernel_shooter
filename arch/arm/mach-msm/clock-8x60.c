@@ -2452,21 +2452,11 @@ static struct rcg_clk jpegd_clk = {
 	}
 static struct clk_freq_tbl clk_tbl_mdp[] = {
 	F_MDP(        0, gnd,  0,  0),
-	F_MDP(  9600000, pll8, 1, 40),
-	F_MDP( 13710000, pll8, 1, 28),
-	F_MDP( 27000000, pxo,  0,  0),
-	F_MDP( 29540000, pll8, 1, 13),
-	F_MDP( 34910000, pll8, 1, 11),
-	F_MDP( 38400000, pll8, 1, 10),
 	F_MDP( 59080000, pll8, 2, 13),
-	F_MDP( 76800000, pll8, 1,  5),
-	F_MDP( 85330000, pll8, 2,  9),
-	F_MDP( 96000000, pll8, 1,  4),
 	F_MDP(128000000, pll8, 1,  3),
 	F_MDP(160000000, pll2, 1,  5),
-	F_MDP(177780000, pll2, 2,  9),
 	F_MDP(200000000, pll2, 1,  4),
-        F_MDP(266667000, pll2, 1,  3),
+	F_MDP(266667000, pll2, 1,  3),
 	F_END
 };
 
@@ -2506,8 +2496,8 @@ static struct rcg_clk mdp_clk = {
 	.c = {
 		.dbg_name = "mdp_clk",
 		.ops = &clk_ops_rcg_8x60,
-		VDD_DIG_FMAX_MAP3(LOW,   85330000, NOMINAL, 200000000,
-				  HIGH, 266667000),
+		VDD_DIG_FMAX_MAP3(LOW,   59080000, NOMINAL, 200000000,
+				  HIGH, 228571000),
 		CLK_INIT(mdp_clk.c),
 		.depends = &mdp_axi_clk.c,
 	},
