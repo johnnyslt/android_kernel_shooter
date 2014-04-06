@@ -186,6 +186,7 @@ struct apr_svc_ch_dev *apr_tal_open(uint32_t svc, uint32_t dest,
 		pr_aud_err("apr_tal: smd_open failed %s\n",
 					svc_names[dest][svc]);
 		mutex_unlock(&apr_svc_ch[dl][dest][svc].m_lock);
+		apr_tal_close(&apr_svc_ch[dl][dest][svc]);
 		return NULL;
 	}
 	rc = wait_event_timeout(apr_svc_ch[dl][dest][svc].wait,
