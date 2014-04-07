@@ -325,6 +325,15 @@ struct msmsdcc_sps_data {
 	struct tasklet_struct		tlet;
 };
 
+struct msmsdcc_msm_bus_vote {
+	uint32_t client_handle;
+	uint32_t curr_vote;
+	int min_bw_vote;
+	int max_bw_vote;
+	bool is_max_bw_needed;
+	struct delayed_work vote_work;
+};
+
 struct msmsdcc_host {
 	struct resource		*core_irqres;
 	struct resource		*bam_irqres;
@@ -406,6 +415,9 @@ struct msmsdcc_host {
 	bool irq_wake_enabled;
 	struct pm_qos_request_list pm_qos_req_dma;
 	unsigned int	use_pio;
+
+	bool pending_resume;
+	struct msmsdcc_msm_bus_vote msm_bus_vote;
 
 	unsigned int	irq_status[5];
 	unsigned int	irq_counter;
