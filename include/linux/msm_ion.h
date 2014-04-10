@@ -72,7 +72,6 @@ enum cp_mem_usage {
 /**
  * Flag to use when allocating to indicate that a heap is secure.
  */
-#define ION_SECURE (1 << ION_HEAP_ID_RESERVED)
 #define ION_FLAG_SECURE (1 << ION_HEAP_ID_RESERVED)
 
 /**
@@ -80,23 +79,18 @@ enum cp_mem_usage {
  *
  * Use of this flag is carefully monitored!
  */
-#define ION_FORCE_CONTIGUOUS (1 << 30)
+#define ION_FLAG_FORCE_CONTIGUOUS (1 << 30)
+
+/**
+* Deprecated! Please use the corresponding ION_FLAG_*
+*/
+#define ION_SECURE ION_FLAG_SECURE
+#define ION_FORCE_CONTIGUOUS ION_FLAG_FORCE_CONTIGUOUS
 
 /**
  * Macro should be used with ion_heap_ids defined above.
  */
 #define ION_HEAP(bit) (1 << (bit))
-#define ion_full_heap_mask (ION_HEAP(ION_CP_MM_HEAP_ID) | \
-			   ION_HEAP(ION_CP_MFC_HEAP_ID) | \
-			   ION_HEAP(ION_CP_WB_HEAP_ID) | \
-			   ION_HEAP(ION_CAMERA_HEAP_ID) | \
-			   ION_HEAP(ION_SF_HEAP_ID) | \
-			   ION_HEAP(ION_IOMMU_HEAP_ID) | \
-			   ION_HEAP(ION_QSECOM_HEAP_ID) | \
-			   ION_HEAP(ION_AUDIO_HEAP_ID) | \
-			   ION_HEAP(ION_MM_FIRMWARE_HEAP_ID) | \
-			   ION_HEAP(ION_SYSTEM_HEAP_ID) )
-
 
 #define ION_ADSP_HEAP_NAME	"adsp"
 #define ION_VMALLOC_HEAP_NAME	"vmalloc"
@@ -160,7 +154,6 @@ struct ion_cp_heap_pdata {
 	size_t secure_size; /* Size used for securing heap when heap is shared*/
 	int reusable;
 	int mem_is_fmem;
-	int is_cma;
 	enum ion_fixed_position fixed_position;
 	int iommu_map_all;
 	int iommu_2x_map_domain;
@@ -280,7 +273,6 @@ static inline int msm_ion_unsecure_heap_2_0(int heap_id,
  * of the handle, p + offset through p + offset + length will have
  * the cache operations performed
  */
-/*
 struct ion_flush_data {
 	struct ion_handle *handle;
 	int fd;
@@ -288,7 +280,7 @@ struct ion_flush_data {
 	unsigned int offset;
 	unsigned int length;
 };
-*/
+
 /* struct ion_flag_data - information about flags for this buffer
  *
  * @handle:	handle to get flags from
@@ -297,12 +289,11 @@ struct ion_flush_data {
  * Takes handle as an input and outputs the flags from the handle
  * in the flag field.
  */
-/*
 struct ion_flag_data {
 	struct ion_handle *handle;
 	unsigned long flags;
 };
-*/
+
 #define ION_IOC_MSM_MAGIC 'M'
 
 /**
@@ -312,7 +303,6 @@ struct ion_flag_data {
  */
 #define ION_IOC_CLEAN_CACHES	_IOWR(ION_IOC_MSM_MAGIC, 0, \
 						struct ion_flush_data)
-
 /**
  * DOC: ION_IOC_INV_CACHES - invalidate the caches
  *
@@ -336,4 +326,5 @@ struct ion_flag_data {
  */
 #define ION_IOC_GET_FLAGS		_IOWR(ION_IOC_MSM_MAGIC, 3, \
 						struct ion_flag_data)
+
 #endif

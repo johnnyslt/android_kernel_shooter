@@ -142,7 +142,7 @@ void ddl_pmem_alloc(struct ddl_buf_addr *buff_addr, size_t sz, u32 align)
 		kernel_vaddr = (unsigned long *) ion_map_kernel(
 					ddl_context->video_ion_client,
 					buff_addr->alloc_handle,
-					UNCACHED);
+					0);
 		if (IS_ERR_OR_NULL(kernel_vaddr)) {
 			ERR("\n%s(): DDL ION map failed\n", __func__);
 			goto unmap_ion_buffer;

@@ -150,7 +150,7 @@ static unsigned long msm_ion_get_base(unsigned long size, int memory_type,
 		return allocate_contiguous_ebi_nomap(size, align);
 		break;
 	case ION_SMI_TYPE:
-		return allocate_contiguous_memory_nomap(size, MEMTYPE_SMI_ION,
+		return allocate_contiguous_memory_nomap(size, MEMTYPE_SMI,
 							align);
 		break;
 	default:
@@ -406,7 +406,8 @@ static void free_pdata(const struct ion_platform_data *pdata)
 }
 
 static int memtype_to_ion_memtype[] = {
-	[MEMTYPE_SMI_ION] = ION_SMI_TYPE,
+	[MEMTYPE_SMI_KERNEL] = ION_SMI_TYPE,
+	[MEMTYPE_SMI]	= ION_SMI_TYPE,
 	[MEMTYPE_EBI0] = ION_EBI_TYPE,
 	[MEMTYPE_EBI1] = ION_EBI_TYPE,
 };
