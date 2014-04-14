@@ -334,8 +334,11 @@ int wldev_set_country(
 	scb_val_t scbval;
 	char smbuf[WLC_IOCTL_SMLEN];
 
-	if (!country_code)
+	if (!country_code) {
+		WLDEV_ERROR(("%s: set country failed for %s\n",
+			__FUNCTION__, country_code));
 		return error;
+	}
 
 	error = wldev_iovar_getbuf(dev, "country", &cspec, sizeof(cspec),
 		smbuf, sizeof(smbuf), NULL);
@@ -343,7 +346,7 @@ int wldev_set_country(
 		WLDEV_ERROR(("%s: get country failed = %d\n", __FUNCTION__, error));
 
 	if ((error < 0) ||
-	    (strncmp(country_code, cspec.country_abbrev, WLC_CNTRY_BUF_SZ) != 0)) {
+	    (strncmp(country_code, smbuf, WLC_CNTRY_BUF_SZ) != 0)) {
 		bzero(&scbval, sizeof(scb_val_t));
 		error = wldev_ioctl(dev, WLC_DISASSOC, &scbval, sizeof(scb_val_t), 1);
 		if (error < 0) {
