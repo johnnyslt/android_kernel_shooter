@@ -1535,7 +1535,8 @@ dhd_rx_frame(dhd_pub_t *dhdp, int ifidx, void *pktbuf, int numpkt, uint8 chan)
 				tout_ctrl = DHD_PACKET_TIMEOUT_MS;
 #ifdef PNO_SUPPORT
 			if (event.event_type == WLC_E_PFN_NET_FOUND) {
-				tout_ctrl = 7 * DHD_PACKET_TIMEOUT_MS;
+				/* enforce custom wake lock to garantee that Kernel not suspended */
+				tout_ctrl = CUSTOM_PNO_EVENT_LOCK_xTIME * DHD_PACKET_TIMEOUT_MS;
 			}
 #endif /* PNO_SUPPORT */
 			if (event.event_type == WLC_E_BTA_HCI_EVENT) {
