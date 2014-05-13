@@ -146,8 +146,7 @@ static void disable_msm_thermal(void) {
 	struct cpufreq_policy *cpu_policy = NULL;
 
 	/* make sure check_temp is no longer running */
-	cancel_delayed_work(&check_temp_work);
-	flush_scheduled_work();
+	cancel_delayed_work_sync(&check_temp_work);
 
 	for_each_possible_cpu(cpu) {
 		cpu_policy = cpufreq_cpu_get(cpu);
