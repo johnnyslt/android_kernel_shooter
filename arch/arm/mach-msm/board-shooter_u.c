@@ -3616,6 +3616,7 @@ static T_MHL_PLATFORM_DATA mhl_sii9234_device_data = {
 	#ifdef CONFIG_FB_MSM_HDMI_MHL
 	.mhl_usb_switch	= shooter_usb_dpdn_switch,
 	.mhl_1v2_power	= mhl_sii9234_1v2_power,
+	.enable_5v = hdmi_enable_5v,
 	#endif
 	.power		= mhl_sii9234_power,
 };

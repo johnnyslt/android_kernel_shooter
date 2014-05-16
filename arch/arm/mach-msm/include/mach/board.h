@@ -557,6 +557,14 @@ struct msm_fb_platform_data {
 	char ext_panel_name[PANEL_NAME_MAX_LEN];
 };
 
+#ifdef CONFIG_FB_MSM_HDMI_MHL
+typedef struct {
+	uint8_t format;
+	uint8_t reg_a3;
+	uint8_t reg_a6;
+} mhl_driving_params;
+#endif
+
 struct msm_hdmi_platform_data {
 	int irq;
 	int (*cable_detect)(int insert);
@@ -570,6 +578,10 @@ struct msm_hdmi_platform_data {
 	bool (*check_hdcp_hw_support)(void);
 	bool (*source)(void);
 	bool is_mhl_enabled;
+#ifdef CONFIG_FB_MSM_HDMI_MHL
+	mhl_driving_params *driving_params;
+	int driving_params_count;
+#endif
 };
 
 struct msm_mhl_platform_data {
@@ -680,6 +692,7 @@ enum usb_connect_type {
 	CONNECT_TYPE_USB,
 	CONNECT_TYPE_AC,
 	CONNECT_TYPE_9V_AC,
+	CONNECT_TYPE_MHL_AC,
 	CONNECT_TYPE_WIRELESS,
 	CONNECT_TYPE_INTERNAL,
 	CONNECT_TYPE_UNSUPPORTED,

@@ -243,5 +243,8 @@ void shooter_init_fb(void);
 void shooter_allocate_fb_region(void);
 void __init shooter_mdp_writeback(struct memtype_reserve* reserve_table);
 void __init msm_fb_add_devices(void);
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
+extern void hdmi_hpd_feature(int enable);
+#endif
 
 #endif /* __ARCH_ARM_MACH_MSM_BOARD_shooter_H */

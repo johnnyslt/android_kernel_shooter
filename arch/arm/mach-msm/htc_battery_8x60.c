@@ -348,6 +348,11 @@ static void cable_status_notifier_func(enum usb_connect_type online)
 		htc_batt_info.rep.charging_source = CHARGER_AC;
 		radio_set_cable_status(CHARGER_AC);
 		break;
+	case CONNECT_TYPE_MHL_AC:
+		BATT_LOG("cable AC");
+		htc_batt_info.rep.charging_source = CHARGER_AC;
+		radio_set_cable_status(CHARGER_AC);
+		break;
 	case CONNECT_TYPE_WIRELESS:
 		BATT_LOG("cable wireless");
 		htc_batt_info.rep.charging_source = CHARGER_WIRELESS;

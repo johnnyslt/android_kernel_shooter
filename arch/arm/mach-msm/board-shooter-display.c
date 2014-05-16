@@ -27,6 +27,10 @@
 #include "devices.h"
 #include "board-shooter.h"
 
+#ifdef CONFIG_FB_MSM_HDMI_MHL
+#include <video/msm_hdmi_modes.h>
+#endif
+
 #ifdef CONFIG_FB_MSM_OVERLAY0_WRITEBACK
 #define MSM_FB_OVERLAY0_WRITEBACK_SIZE roundup((960 * ALIGN(540, 32) * 3 * 2), 4096)
 #else
@@ -1340,6 +1344,56 @@ static struct dsi_cmd_desc novatek_cmd_backlight_cmds[] = {
 		sizeof(led_pwm1), led_pwm1},
 };
 
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
+static struct resource hdmi_msm_resources[] = {
+	{
+		.name  = "hdmi_msm_qfprom_addr",
+		.start = 0x00700000,
+		.end   = 0x007060FF,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.name  = "hdmi_msm_hdmi_addr",
+		.start = 0x04A00000,
+		.end   = 0x04A00FFF,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.name  = "hdmi_msm_irq",
+		.start = HDMI_IRQ,
+		.end   = HDMI_IRQ,
+		.flags = IORESOURCE_IRQ,
+	},
+};
+
+#ifdef CONFIG_FB_MSM_HDMI_MHL
+static mhl_driving_params pyramid_driving_params[] = {
+	{.format = HDMI_VFRMT_640x480p60_4_3,	.reg_a3=0xEB, .reg_a6=0x0C},
+	{.format = HDMI_VFRMT_720x480p60_16_9,	.reg_a3=0xEB, .reg_a6=0x0C},
+	{.format = HDMI_VFRMT_1280x720p60_16_9,	.reg_a3=0xEB, .reg_a6=0x0C},
+	{.format = HDMI_VFRMT_720x576p50_16_9,	.reg_a3=0xEB, .reg_a6=0x0C},
+	{.format = HDMI_VFRMT_1920x1080p24_16_9, .reg_a3=0xEB, .reg_a6=0x0C},
+	{.format = HDMI_VFRMT_1920x1080p30_16_9, .reg_a3=0xEB, .reg_a6=0x0C},
+};
+#endif
+
+static struct msm_hdmi_platform_data hdmi_msm_data = {
+	.irq = HDMI_IRQ,
+#ifdef CONFIG_FB_MSM_HDMI_MHL
+	.driving_params =  pyramid_driving_params,
+	.driving_params_count = ARRAY_SIZE(pyramid_driving_params),
+#endif
+};
+
+static struct platform_device hdmi_msm_device = {
+	.name = "hdmi_msm",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(hdmi_msm_resources),
+	.resource = hdmi_msm_resources,
+	.dev.platform_data = &hdmi_msm_data,
+};
+#endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
+
 static int mipi_lcd_on = 1;
 static struct dcs_cmd_req cmdreq;
 
@@ -1638,6 +1692,9 @@ void __init shooter_init_fb(void)
 	if (panel_type != PANEL_ID_NONE) {
 		msm_fb_register_device("mdp", &mdp_pdata);
 		msm_fb_register_device("mipi_dsi", &mipi_dsi_pdata);
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
+    platform_device_register(&hdmi_msm_device);
+#endif
 	}
 
 #ifdef CONFIG_FB_MSM_DTV
