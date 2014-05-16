@@ -21,6 +21,12 @@
 #define MSM_RAM_CONSOLE_BASE	MSM_HTC_RAM_CONSOLE_PHYS
 #define MSM_RAM_CONSOLE_SIZE	MSM_HTC_RAM_CONSOLE_SIZE
 
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
+#define MSM_FB_EXT_BUF_SIZE (1920 * 1088 * 2 * 1) /* 2 bpp x 1 page */
+#else
+#define MSM_FB_EXT_BUF_SIZE 0
+#endif
+
 /* Memory map */
 #define MSM_ION_HEAP_NUM      6
 
