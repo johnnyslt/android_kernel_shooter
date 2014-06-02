@@ -3785,7 +3785,7 @@ void mdp4_overlay_dma_commit(int mixer)
 	* non double buffer register update here
 	* perf level, new clock rate should be done here
 	*/
-	struct mdp4_overlay_pipe *pipe;
+/*	struct mdp4_overlay_pipe *pipe;
 	char *vg_base;
 	int i, pnum;
 	for (i = 0; i < OVERLAY_PIPE_MAX; i++, pipe++) {
@@ -3802,7 +3802,7 @@ void mdp4_overlay_dma_commit(int mixer)
 				pipe->frame_size = 0;
 			}
 		}
-	}
+	}*/
 }
 
 /*
