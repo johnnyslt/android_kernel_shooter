@@ -2292,6 +2292,12 @@ static void msm_rotator_set_perf_level(u32 wh, u32 is_rgb)
 		perf_level = 3;
 	else
 		perf_level = 4;
+
+#ifdef CONFIG_MSM_BUS_SCALING
+	msm_bus_scale_client_update_request(msm_rotator_dev->bus_client_handle,
+		perf_level);
+#endif
+
 }
 
 static int rot_enable_iommu_clocks(struct msm_rotator_dev *rot_dev)
@@ -2660,7 +2666,10 @@ static int msm_rotator_finish(unsigned long arg)
 
 	if (s == MAX_SESSIONS)
 		rc = -EINVAL;
-
+#ifdef CONFIG_MSM_BUS_SCALING
+	msm_bus_scale_client_update_request(msm_rotator_dev->bus_client_handle,
+		0);
+#endif
 	if (msm_rotator_dev->sec_mapped)
 		unmap_sec_resource(msm_rotator_dev);
 	mutex_unlock(&msm_rotator_dev->rotator_lock);

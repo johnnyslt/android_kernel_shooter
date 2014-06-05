@@ -1954,12 +1954,6 @@ static struct platform_device msm_mdp_device = {
 static struct msm_bus_vectors rotator_init_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab = 0,
-		.ib = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
 		.ib = 0,
@@ -1967,12 +1961,6 @@ static struct msm_bus_vectors rotator_init_vectors[] = {
 };
 
 static struct msm_bus_vectors rotator_ui_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = 0,
-		.ib  = 0,
-	},
 	{
 		.src = MSM_BUS_MASTER_ROTATOR,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
@@ -1984,25 +1972,12 @@ static struct msm_bus_vectors rotator_ui_vectors[] = {
 static struct msm_bus_vectors rotator_vga_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (640 * 480 * 2 * 2 * 30),
-		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab  = (640 * 480 * 2 * 2 * 30),
 		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
 	},
 };
-
 static struct msm_bus_vectors rotator_720p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (1280 * 736 * 2 * 2 * 30),
-		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
-	},
 	{
 		.src = MSM_BUS_MASTER_ROTATOR,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
@@ -2012,12 +1987,6 @@ static struct msm_bus_vectors rotator_720p_vectors[] = {
 };
 
 static struct msm_bus_vectors rotator_1080p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (1920 * 1088 * 2 * 2 * 30),
-		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
-	},
 	{
 		.src = MSM_BUS_MASTER_ROTATOR,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
@@ -2055,6 +2024,13 @@ struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
 	.name = "rotator",
 };
 
+void __init msm_rotator_update_bus_vectors(unsigned int xres,
+	unsigned int yres)
+{
+	rotator_ui_vectors[0].ab = xres * yres * 4 * 2 * 60;
+	rotator_ui_vectors[0].ib = xres * yres * 4 * 2 * 60 * 3 / 2;
+}
+
 static struct resource resources_msm_rotator[] = {
 	{
 		.start	= 0x04E00000,
@@ -2086,6 +2062,9 @@ static struct msm_rotator_platform_data rotator_pdata = {
 	.hardware_version_number = 0x01010307,
 	.rotator_clks = rotator_clocks,
 	.regulator_name = "fs_rot",
+#ifdef CONFIG_MSM_BUS_SCALING
+	.bus_scale_table = &rotator_bus_scale_pdata,
+#endif
 	.rot_iommu_split_domain = 0,
 };
 
