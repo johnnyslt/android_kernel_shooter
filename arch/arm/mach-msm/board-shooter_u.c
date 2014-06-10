@@ -2155,11 +2155,6 @@ static struct ion_cp_heap_pdata cp_mfc_ion_pdata = {
 	.align = PAGE_SIZE,
 };
 
-static struct ion_cp_heap_pdata cp_wb_ion_pdata = {
-	.permission_type = IPT_TYPE_MDP_WRITEBACK,
-	.align = PAGE_SIZE,
-};
-
 static struct ion_co_heap_pdata fw_co_ion_pdata = {
 	.adjacent_mem_id = ION_CP_MM_HEAP_ID,
 	.align = SZ_128K,
@@ -2202,15 +2197,6 @@ static struct ion_platform_heap shooter_heaps[] = {
 		.size	= MSM_ION_MFC_SIZE,
 		.memory_type = ION_SMI_TYPE,
 		.extra_data = (void *) &cp_mfc_ion_pdata,
-	},
-	{
-		.id	= ION_CP_WB_HEAP_ID,
-		.type	= ION_HEAP_TYPE_CP,
-		.name	= ION_WB_HEAP_NAME,
-		.base	= MSM_ION_WB_BASE,
-		.size	= MSM_ION_WB_SIZE,
-		.memory_type = ION_EBI_TYPE,
-		.extra_data = (void *) &cp_wb_ion_pdata,
 	},
 	{
 		.id	= ION_SF_HEAP_ID,
