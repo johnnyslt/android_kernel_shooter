@@ -1340,12 +1340,12 @@ static struct dsi_cmd_desc novatek_cmd_backlight_cmds[] = {
 		sizeof(led_pwm1), led_pwm1},
 };
 
-static int mipi_lcd_on = 1;
 static struct dcs_cmd_req cmdreq;
 
 static int shooter_lcd_on(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
+	struct mipi_panel_info *mipi;
 
 	mfd = platform_get_drvdata(pdev);
 	if (!mfd)
@@ -1353,23 +1353,26 @@ static int shooter_lcd_on(struct platform_device *pdev)
 	if (mfd->key != MFD_KEY)
 		return -EINVAL;
 
-	if (mipi_lcd_on)
-		return 0;
+	mipi = &mfd->panel_info.mipi;
 
-  if (panel_type == PANEL_ID_SHR_SHARP_NT) {
-			printk(KERN_INFO "shooter_lcd_on PANEL_ID_SHR_SHARP_NT\n");
-			cmdreq.cmds = shr_sharp_cmd_on_cmds;
-			cmdreq.cmds_cnt = ARRAY_SIZE(shr_sharp_cmd_on_cmds);
-			cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
-			cmdreq.rlen = 0;
-			cmdreq.cb = NULL;
+	if (!first_init) {
+		if (mipi->mode == DSI_CMD_MODE) {
+      if (panel_type == PANEL_ID_SHR_SHARP_NT) {
+        printk(KERN_INFO "shooter_lcd_on PANEL_ID_SHR_SHARP_NT\n");
+        cmdreq.cmds = shr_sharp_cmd_on_cmds;
+        cmdreq.cmds_cnt = ARRAY_SIZE(shr_sharp_cmd_on_cmds);
+        cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
+        cmdreq.rlen = 0;
+        cmdreq.cb = NULL;
 
-			mipi_dsi_cmdlist_put(&cmdreq);
-		}else{
-			PR_DISP_ERR("%s: panel_type is not supported!(%d)\n", __func__, panel_type);
-	}
+        mipi_dsi_cmdlist_put(&cmdreq);
+      }else{
+        PR_DISP_ERR("%s: panel_type is not supported!(%d)\n", __func__, panel_type);
+      }
+    }
+  }
 
-	mipi_lcd_on = 1;
+	first_init = 0;
 
 	return 0;
 }
@@ -1385,20 +1388,12 @@ static int shooter_lcd_off(struct platform_device *pdev)
 	if (mfd->key != MFD_KEY)
 		return -EINVAL;
 
-	if (!mipi_lcd_on)
-		return 0;
-
-  if (panel_type == PANEL_ID_SHR_SHARP_NT) {
-			cmdreq.cmds = novatek_display_off_cmds;
-			cmdreq.cmds_cnt = ARRAY_SIZE(novatek_display_off_cmds);
-			cmdreq.flags = CMD_REQ_COMMIT | CMD_CLK_CTRL;
-			cmdreq.rlen = 0;
-			cmdreq.cb = NULL;
-
-			mipi_dsi_cmdlist_put(&cmdreq);
-	}
-
-	mipi_lcd_on = 0;
+		cmdreq.cmds = novatek_display_off_cmds;
+		cmdreq.cmds_cnt = ARRAY_SIZE(novatek_display_off_cmds);
+		cmdreq.flags = CMD_REQ_COMMIT;
+		cmdreq.rlen = 0;
+		cmdreq.cb = NULL;
+		mipi_dsi_cmdlist_put(&cmdreq);
 
 	return 0;
 }
@@ -1489,9 +1484,6 @@ static void shooter_set_backlight(struct msm_fb_data_type *mfd)
 {
 	if (panel_type == PANEL_ID_SHR_SHARP_NT) {
 		led_pwm1[1] = shooter_shrink_pwm((unsigned char)(mfd->bl_level));
-	}
-	else {
-		led_pwm1[1] = (unsigned char)(mfd->bl_level);
 	}
 
 	cmdreq.cmds = novatek_cmd_backlight_cmds;
